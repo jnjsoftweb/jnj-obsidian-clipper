@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import { Template, Property } from '../types/types';
 import { generateFrontmatter, saveToObsidian, sanitizeFileName } from '../utils/obsidian-note-creator';
-import { extractPageContent, initializePageContent, replaceVariables } from '../utils/content-extractor';
+import { extractPageContent, initializePageContent, replaceVariables, sendExtractAIChat } from '../utils/content-extractor';
+import { buildAIChatVariables } from '../utils/ai-chat-extractor';
 import { initializeIcons, getPropertyTypeIcon } from '../icons/icons';
 import { decompressFromUTF16 } from 'lz-string';
 import { findMatchingTemplate, matchPattern } from '../utils/triggers';
@@ -177,15 +178,45 @@ document.addEventListener('DOMContentLoaded', async function() {
 				try {
 					const extractedData = await extractPageContent(tabs[0].id);
 					if (extractedData) {
-						const initializedContent = await initializePageContent(extractedData.content, extractedData.selectedHtml, extractedData.extractedContent, currentUrl, extractedData.schemaOrgData, extractedData.fullHtml);
-						
-						if (initializedContent) {
-							currentTemplate = findMatchingTemplate(currentUrl, templates, extractedData.schemaOrgData) || templates[0];
+						// 템플릿 매칭을 먼저 수행해 siteConfig 유무를 파악한다
+						currentTemplate = findMatchingTemplate(currentUrl, templates, extractedData.schemaOrgData) || templates[0];
+						if (currentTemplate) {
+							templateDropdown.value = currentTemplate.name;
+						}
 
-							if (currentTemplate) {
-								templateDropdown.value = currentTemplate.name;
+						// AI chat 템플릿이면 대화 추출
+						let extraVariables: Record<string, string> | undefined;
+						if (currentTemplate?.siteConfig && currentTemplate?.chatFormat) {
+							const chatResult = await sendExtractAIChat(
+								tabs[0].id,
+								currentTemplate.siteConfig,
+								currentTemplate.chatFormat
+							);
+							if (chatResult) {
+								if (chatResult.messageCount === 0) {
+									console.warn('[AI Chat] 메시지를 찾을 수 없습니다. 대화 페이지인지 확인하세요. (URL:', currentUrl, ')');
+								}
+								extraVariables = buildAIChatVariables(
+									chatResult.markdown,
+									chatResult.messageCount,
+									currentTemplate
+								);
+							} else {
+								console.warn('[AI Chat] content script 응답 없음. 페이지를 새로고침 후 다시 시도하세요.');
 							}
+						}
 
+						const initializedContent = await initializePageContent(
+							extractedData.content,
+							extractedData.selectedHtml,
+							extractedData.extractedContent,
+							currentUrl,
+							extractedData.schemaOrgData,
+							extractedData.fullHtml,
+							extraVariables
+						);
+
+						if (initializedContent) {
 							await initializeTemplateFields(currentTemplate, initializedContent.currentVariables, initializedContent.noteName, extractedData.schemaOrgData);
 						} else {
 							showError('Unable to initialize page content.');
@@ -255,7 +286,37 @@ document.addEventListener('DOMContentLoaded', async function() {
 				try {
 					const extractedData = await extractPageContent(tabs[0].id);
 					if (extractedData) {
-						const initializedContent = await initializePageContent(extractedData.content, extractedData.selectedHtml, extractedData.extractedContent, tabs[0].url!, extractedData.schemaOrgData, extractedData.fullHtml);
+						// AI chat 템플릿이면 대화 추출
+						let extraVariables: Record<string, string> | undefined;
+						if (currentTemplate.siteConfig && currentTemplate.chatFormat) {
+							const chatResult = await sendExtractAIChat(
+								tabs[0].id,
+								currentTemplate.siteConfig,
+								currentTemplate.chatFormat
+							);
+							if (chatResult) {
+								if (chatResult.messageCount === 0) {
+									console.warn('[AI Chat] 메시지를 찾을 수 없습니다. 대화 페이지인지 확인하세요.');
+								}
+								extraVariables = buildAIChatVariables(
+									chatResult.markdown,
+									chatResult.messageCount,
+									currentTemplate
+								);
+							} else {
+								console.warn('[AI Chat] content script 응답 없음. 페이지를 새로고침 후 다시 시도하세요.');
+							}
+						}
+
+						const initializedContent = await initializePageContent(
+							extractedData.content,
+							extractedData.selectedHtml,
+							extractedData.extractedContent,
+							tabs[0].url!,
+							extractedData.schemaOrgData,
+							extractedData.fullHtml,
+							extraVariables
+						);
 						if (initializedContent) {
 							await initializeTemplateFields(currentTemplate, initializedContent.currentVariables, initializedContent.noteName, extractedData.schemaOrgData);
 						} else {

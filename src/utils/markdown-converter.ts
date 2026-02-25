@@ -156,6 +156,52 @@ export function createMarkdownContent(content: string, url: string, selectedHtml
 		}
 	});
 
+	// 코드 블록 언어 감지 — <code class="language-*"> 없는 <pre> 대상
+	// 우선순위: 직전 형제 요소의 언어명 텍스트 → Gemini .code-block-decoration > span
+	turndownService.addRule('codeBlockLanguageDetection', {
+		filter: (node: Node): boolean => {
+			if (node.nodeName !== 'PRE') return false;
+			const code = (node as HTMLElement).querySelector('code');
+			// <code class="language-*"> 가 있으면 GFM 플러그인이 처리하므로 제외
+			return !code || !/language-\w+/.test(code.className);
+		},
+		replacement: (_content: string, node: Node): string => {
+			const pre = node as HTMLElement;
+			const code = pre.querySelector('code');
+			const codeText = code?.textContent ?? pre.textContent ?? '';
+			let lang = '';
+
+			const parent = pre.parentElement;
+			if (parent) {
+				// ChatGPT 패턴: <pre> 직전 형제에 언어명만 있는 경우
+				const siblings = Array.from(parent.children);
+				const idx = siblings.indexOf(pre);
+				if (idx > 0) {
+					const prev = siblings[idx - 1];
+					const text = prev.textContent?.trim() ?? '';
+					if (text && /^[a-zA-Z0-9_+#.-]+$/.test(text) && text.length <= 20) {
+						lang = text.toLowerCase();
+					}
+				}
+
+				// Gemini 패턴: .code-block-decoration > span
+				if (!lang) {
+					const decoration =
+						parent.querySelector('.code-block-decoration > span') ??
+						parent.closest('.code-block')?.querySelector('.code-block-decoration > span');
+					if (decoration) {
+						const text = decoration.textContent?.trim() ?? '';
+						if (text && /^[a-zA-Z0-9_+#. -]+$/i.test(text) && text.length <= 20) {
+							lang = text.toLowerCase();
+						}
+					}
+				}
+			}
+
+			return `\n\n\`\`\`${lang}\n${codeText.replace(/\n$/, '')}\n\`\`\`\n\n`;
+		}
+	});
+
 	turndownService.addRule('highlight', {
 		filter: 'mark',
 		replacement: function(content) {

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd /c/JnJ/Developments/Projects/@chrome-extension/jnj-obsidian-clipper && npm run build 2>&1)"
+      "Bash(cd /c/JnJ/Developments/Projects/@chrome-extension/jnj-obsidian-clipper && npm run build 2>&1)",
+      "Bash(cd \"C:\\\\JnJ\\\\Developments\\\\Projects\\\\@chrome-extension\\\\jnj-obsidian-clipper\" && npm run build 2>&1)",
+      "Bash(python3:*)",
+      "Bash(cd \"C:\\\\JnJ\\\\Developments\\\\Projects\\\\@chrome-extension\\\\jnj-obsidian-clipper\" && npx tsc --noEmit 2>&1)",
+      "Bash(tail:*)"
     ]
   }
 }

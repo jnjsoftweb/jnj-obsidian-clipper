@@ -160,6 +160,100 @@
 									to pre-populate data from the&nbsp;page.</div>
 								<textarea id="note-content-format" rows="6" placeholder="{{content}}"></textarea>
 							</div>
+							<details class="ai-chat-settings">
+								<summary>AI Chat 설정</summary>
+								<div class="ai-chat-settings-body">
+									<h4>표시 정보</h4>
+									<div class="setting-item">
+										<label for="chat-emoji">사이트 이모지</label>
+										<input type="text" id="chat-emoji" placeholder="🤖" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-author-label">AI 모델 이름</label>
+										<input type="text" id="chat-author-label" placeholder="ChatGPT" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-title-prefix">제목 접두사</label>
+										<input type="text" id="chat-title-prefix" placeholder="💬 " />
+									</div>
+
+									<h4>사이트 설정</h4>
+									<div class="setting-item">
+										<label for="chat-hostname">호스트명</label>
+										<div class="setting-item-description">AI chat 사이트의 hostname (예: chatgpt.com). 비어 있으면 AI Chat 모드가 비활성화됩니다.</div>
+										<input type="text" id="chat-hostname" placeholder="chatgpt.com" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-message-selector">메시지 선택자</label>
+										<div class="setting-item-description">각 대화 메시지를 선택하는 CSS selector</div>
+										<input type="text" id="chat-message-selector" placeholder="[data-testid^='conversation-turn']" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-content-selector">콘텐츠 선택자 (선택)</label>
+										<div class="setting-item-description">메시지 내부에서 실제 콘텐츠를 선택하는 CSS selector</div>
+										<input type="text" id="chat-content-selector" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-ignore-selector">무시 선택자 (선택)</label>
+										<div class="setting-item-description">제거할 UI 요소의 CSS selector (기본값: button, svg, img, [aria-hidden='true'], .sr-only)</div>
+										<input type="text" id="chat-ignore-selector" />
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
+											<label for="chat-deduplicate">중복 제거</label>
+											<div class="setting-item-description">동일한 내용의 메시지를 중복 추출하지 않습니다.</div>
+										</div>
+										<div class="setting-item-control">
+											<div class="checkbox-container">
+												<input type="checkbox" id="chat-deduplicate" />
+											</div>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
+											<label for="chat-scroll-to-load">스크롤하여 로드</label>
+											<div class="setting-item-description">가상 스크롤 사이트(AI Studio 등)에서 전체 메시지를 로드합니다.</div>
+										</div>
+										<div class="setting-item-control">
+											<div class="checkbox-container">
+												<input type="checkbox" id="chat-scroll-to-load" />
+											</div>
+										</div>
+									</div>
+
+									<h4>사용자 메시지 판별</h4>
+									<div class="setting-item">
+										<label for="chat-user-attr-type">판별 방식</label>
+										<select id="chat-user-attr-type">
+											<option value="attr">속성값 매칭 (ChatGPT, Claude)</option>
+											<option value="tag">태그명 매칭 (Gemini)</option>
+											<option value="containerSelector">컨테이너 클래스 매칭 (AI Studio)</option>
+											<option value="htmlMatch">HTML 키워드 매칭 (Genspark)</option>
+										</select>
+									</div>
+									<div id="user-attr-fields"></div>
+
+									<h4>대화 형식</h4>
+									<div class="setting-item">
+										<label for="chat-user-title">사용자 메시지 제목</label>
+										<input type="text" id="chat-user-title" placeholder="## 🧑 User" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-ai-title">AI 메시지 제목</label>
+										<input type="text" id="chat-ai-title" placeholder="## 🤖 Assistant" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-turn-separator">턴 구분자</label>
+										<div class="setting-item-description">사용자→AI 사이에 삽입되는 구분자</div>
+										<input type="text" id="chat-turn-separator" />
+									</div>
+									<div class="setting-item">
+										<label for="chat-qa-separator">Q&A 구분자</label>
+										<div class="setting-item-description">새 Q&A 세트 시작 시 삽입되는 구분자 (예: ---)</div>
+										<input type="text" id="chat-qa-separator" placeholder="---" />
+									</div>
+								</div>
+							</details>
 						</div>
 					</form>
 				</div>

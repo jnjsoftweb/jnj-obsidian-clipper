@@ -256,6 +256,68 @@
 	}
 }
 
+details.ai-chat-settings {
+	margin-top: 1.5rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 0;
+
+	> summary {
+		padding: 10px 14px;
+		cursor: pointer;
+		font-size: var(--font-ui-small);
+		font-weight: 500;
+		color: var(--text-muted);
+		user-select: none;
+		list-style: none;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+
+		&::before {
+			content: '▶';
+			font-size: 10px;
+			transition: transform 0.15s ease;
+		}
+
+		&:hover {
+			color: var(--text-normal);
+			background-color: var(--background-modifier-hover);
+			border-radius: 6px;
+		}
+	}
+
+	&[open] > summary::before {
+		transform: rotate(90deg);
+	}
+
+	&[open] > summary {
+		border-bottom: 1px solid var(--background-modifier-border);
+		border-radius: 6px 6px 0 0;
+	}
+
+	.ai-chat-settings-body {
+		padding: 12px 14px 8px;
+
+		h4 {
+			margin: 1rem 0 0.5rem;
+			font-size: var(--font-ui-small);
+			font-weight: 600;
+			color: var(--text-muted);
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+
+			&:first-child {
+				margin-top: 0;
+			}
+		}
+	}
+
+	#user-attr-fields {
+		margin-bottom: 4px;
+	}
+}
+
 #vault-list {
 	display: flex;
 	flex-direction: column;

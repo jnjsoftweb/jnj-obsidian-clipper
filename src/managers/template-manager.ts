@@ -1,5 +1,6 @@
 import { Template, Property } from '../types/types';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { DEFAULT_AI_CHAT_TEMPLATES } from '../data/default-ai-chat-templates';
 
 export let templates: Template[] = [];
 export let editingTemplateIndex = -1;
@@ -27,8 +28,12 @@ export function loadTemplates(): Promise<Template[]> {
 			}
 
 			if (loadedTemplates.length === 0) {
-				const defaultTemplate = createDefaultTemplate();
-				loadedTemplates.push(defaultTemplate);
+				// 최초 설치: 기본 웹 클리핑 템플릿 1개 + AI chat 템플릿 5개 생성
+				loadedTemplates.push(createDefaultTemplate());
+				for (const aiTemplate of DEFAULT_AI_CHAT_TEMPLATES) {
+					loadedTemplates.push(aiTemplate);
+				}
+				templates = loadedTemplates;
 				await saveTemplateSettings();
 			}
 

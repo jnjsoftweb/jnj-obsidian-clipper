@@ -1,4 +1,5 @@
 import { ExtractedContent } from '../types/types';
+import { SiteConfig, ChatFormat } from '../types/site-config';
 import { extractReadabilityContent, createMarkdownContent } from './markdown-converter';
 import { sanitizeFileName } from './obsidian-note-creator';
 import { applyFilters } from './filters';
@@ -98,6 +99,11 @@ export async function extractPageContent(tabId: number): Promise<{
 } | null> {
 	return new Promise((resolve) => {
 		chrome.tabs.sendMessage(tabId, { action: "getPageContent" }, function(response) {
+			if (chrome.runtime.lastError) {
+				console.error('getPageContent 오류:', chrome.runtime.lastError.message);
+				resolve(null);
+				return;
+			}
 			if (response && response.content) {
 				resolve({
 					content: response.content,
@@ -120,6 +126,34 @@ export function getMetaContent(doc: Document, attr: string, value: string): stri
 	return element ? element.getAttribute("content")?.trim() ?? "" : "";
 }
 
+/**
+ * content script에 "extractAIChat" 메시지를 전송하고 대화 마크다운을 받아온다.
+ * AI chat 템플릿 팝업 초기화 시 호출된다.
+ */
+export async function sendExtractAIChat(
+	tabId: number,
+	siteConfig: SiteConfig,
+	chatFormat: ChatFormat
+): Promise<{ markdown: string; messageCount: number } | null> {
+	return new Promise((resolve) => {
+		chrome.tabs.sendMessage(
+			tabId,
+			{ action: 'extractAIChat', siteConfig, chatFormat },
+			(response) => {
+				if (chrome.runtime.lastError || !response || response.error) {
+					console.error(
+						'extractAIChat 오류:',
+						chrome.runtime.lastError?.message ?? response?.error
+					);
+					resolve(null);
+				} else {
+					resolve(response as { markdown: string; messageCount: number });
+				}
+			}
+		);
+	});
+}
+
 export async function extractContentBySelector(tabId: number, selector: string): Promise<{ content: string; schemaOrgData: any }> {
 	return new Promise((resolve) => {
 		const attributeMatch = selector.match(/:([a-zA-Z-]+)$/);
@@ -132,13 +166,18 @@ export async function extractContentBySelector(tabId: number, selector: string):
 		}
 
 		chrome.tabs.sendMessage(tabId, { action: "extractContent", selector: baseSelector, attribute: attribute }, function(response) {
+			if (chrome.runtime.lastError) {
+				console.error('extractContent 오류:', chrome.runtime.lastError.message);
+				resolve({ content: '', schemaOrgData: null });
+				return;
+			}
 			let content = response ? response.content : '';
-			
+
 			// Ensure content is always a string
 			if (Array.isArray(content)) {
 				content = JSON.stringify(content);
 			}
-			
+
 			resolve({
 				content: content,
 				schemaOrgData: response ? response.schemaOrgData : null
@@ -147,11 +186,23 @@ export async function extractContentBySelector(tabId: number, selector: string):
 	});
 }
 
-export async function initializePageContent(content: string, selectedHtml: string, extractedContent: ExtractedContent, currentUrl: string, schemaOrgData: any, fullHtml: string) {
+export async function initializePageContent(
+	content: string,
+	selectedHtml: string,
+	extractedContent: ExtractedContent,
+	currentUrl: string,
+	schemaOrgData: any,
+	fullHtml: string,
+	extraVariables?: Record<string, string>
+) {
 	const readabilityArticle = extractReadabilityContent(content);
 	if (!readabilityArticle) {
-		console.error('Failed to parse content with Readability');
-		return null;
+		// AI chat 템플릿(extraVariables 있음)이면 Readability 실패를 허용한다.
+		// {{content}} 는 빈 문자열이 되고, {{chatContent}} 가 실제 본문을 담당한다.
+		if (!extraVariables) {
+			console.error('Failed to parse content with Readability');
+			return null;
+		}
 	}
 
 	const parser = new DOMParser();
@@ -202,7 +253,10 @@ export async function initializePageContent(content: string, selectedHtml: strin
 		|| getMetaContent(doc, "name", "copyright")
 		|| '';
 
-	const markdownBody = createMarkdownContent(content, currentUrl, selectedHtml);
+	// AI chat 페이지는 Readability 실패 가능 → markdownBody 는 빈 문자열로 처리
+	const markdownBody = readabilityArticle
+		? createMarkdownContent(content, currentUrl, selectedHtml)
+		: '';
 
 	const currentVariables: { [key: string]: string } = {
 		'{{author}}': author,
@@ -241,6 +295,12 @@ export async function initializePageContent(content: string, selectedHtml: strin
 	// Add schema.org data to variables
 	if (schemaOrgData) {
 		addSchemaOrgDataToVariables(schemaOrgData, currentVariables);
+	}
+
+	// AI chat 변수 병합 — {{chatContent}}, {{messageCount}}, {{model}} 등이
+	// 일반 변수보다 나중에 병합되어 동일 키 충돌 시 AI chat 값이 우선한다.
+	if (extraVariables) {
+		Object.assign(currentVariables, extraVariables);
 	}
 
 	console.log('Available variables:', currentVariables);

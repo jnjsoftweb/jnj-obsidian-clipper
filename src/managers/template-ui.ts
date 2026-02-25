@@ -1,4 +1,5 @@
 import { Template, Property } from '../types/types';
+import { SiteConfig, ChatFormat, UserAttribute } from '../types/site-config';
 import { templates, editingTemplateIndex, saveTemplateSettings, getTemplates, setEditingTemplateIndex } from './template-manager';
 import { initializeIcons, getPropertyTypeIcon } from '../icons/icons';
 import { escapeValue, escapeHtml, unescapeValue } from '../utils/string-utils';
@@ -179,6 +180,16 @@ export function showTemplateEditor(template: Template | null): void {
 			vaultSelect.appendChild(option);
 		});
 		vaultSelect.value = editingTemplate.vault || '';
+	}
+
+	populateAIChatFields(editingTemplate);
+
+	// userAttribute 판별 방식 변경 시 동적 필드 재렌더링
+	const userAttrTypeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
+	if (userAttrTypeSelect) {
+		const newSelect = userAttrTypeSelect.cloneNode(true) as HTMLSelectElement;
+		userAttrTypeSelect.replaceWith(newSelect);
+		newSelect.addEventListener('change', () => renderUserAttrFields());
 	}
 
 	updateUrl('templates', editingTemplate.id);
@@ -370,6 +381,8 @@ export function updateTemplateFromForm(): void {
 	const vaultSelect = document.getElementById('template-vault') as HTMLSelectElement;
 	if (vaultSelect) template.vault = vaultSelect.value || undefined;
 
+	readAIChatFields(template);
+
 	hasUnsavedChanges = true;
 }
 
@@ -404,4 +417,207 @@ function handleAddProperty(): void {
 	if (editingTemplateIndex !== -1) {
 		updateTemplateFromForm();
 	}
+}
+
+// ──────────────────────────────────────────────────────
+// AI Chat 설정 UI 함수
+// ──────────────────────────────────────────────────────
+
+function populateAIChatFields(template: Template): void {
+	const emojiInput = document.getElementById('chat-emoji') as HTMLInputElement;
+	const authorLabelInput = document.getElementById('chat-author-label') as HTMLInputElement;
+	const titlePrefixInput = document.getElementById('chat-title-prefix') as HTMLInputElement;
+
+	if (emojiInput) emojiInput.value = template.emoji ?? '';
+	if (authorLabelInput) authorLabelInput.value = template.authorLabel ?? '';
+	if (titlePrefixInput) titlePrefixInput.value = template.titlePrefix ?? '';
+
+	const sc = template.siteConfig;
+	const cf = template.chatFormat;
+
+	const hostnameInput = document.getElementById('chat-hostname') as HTMLInputElement;
+	const messageSelectorInput = document.getElementById('chat-message-selector') as HTMLInputElement;
+	const contentSelectorInput = document.getElementById('chat-content-selector') as HTMLInputElement;
+	const ignoreSelectorInput = document.getElementById('chat-ignore-selector') as HTMLInputElement;
+	const deduplicateCheckbox = document.getElementById('chat-deduplicate') as HTMLInputElement;
+	const scrollToLoadCheckbox = document.getElementById('chat-scroll-to-load') as HTMLInputElement;
+
+	if (sc) {
+		if (hostnameInput) hostnameInput.value = sc.hostname ?? '';
+		if (messageSelectorInput) messageSelectorInput.value = sc.messageSelector ?? '';
+		if (contentSelectorInput) contentSelectorInput.value = sc.contentSelector ?? '';
+		if (ignoreSelectorInput) ignoreSelectorInput.value = sc.ignoreSelector ?? '';
+		if (deduplicateCheckbox) deduplicateCheckbox.checked = sc.deduplicate ?? false;
+		if (scrollToLoadCheckbox) scrollToLoadCheckbox.checked = sc.scrollToLoad ?? false;
+
+		// userAttribute 판별 방식 결정
+		let attrType = 'attr';
+		if ('tag' in sc.userAttribute) attrType = 'tag';
+		else if ('containerSelector' in sc.userAttribute) attrType = 'containerSelector';
+		else if ('htmlMatch' in sc.userAttribute) attrType = 'htmlMatch';
+
+		const typeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
+		if (typeSelect) typeSelect.value = attrType;
+		renderUserAttrFields(sc.userAttribute);
+	} else {
+		if (hostnameInput) hostnameInput.value = '';
+		if (messageSelectorInput) messageSelectorInput.value = '';
+		if (contentSelectorInput) contentSelectorInput.value = '';
+		if (ignoreSelectorInput) ignoreSelectorInput.value = '';
+		if (deduplicateCheckbox) deduplicateCheckbox.checked = false;
+		if (scrollToLoadCheckbox) scrollToLoadCheckbox.checked = false;
+		// 판별 방식을 기본값(attr)으로 리셋하여 이전 템플릿의 선택이 남지 않도록 한다
+		const typeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
+		if (typeSelect) typeSelect.value = 'attr';
+		renderUserAttrFields();
+	}
+
+	if (cf) {
+		const userTitleInput = document.getElementById('chat-user-title') as HTMLInputElement;
+		const aiTitleInput = document.getElementById('chat-ai-title') as HTMLInputElement;
+		const turnSepInput = document.getElementById('chat-turn-separator') as HTMLInputElement;
+		const qaSepInput = document.getElementById('chat-qa-separator') as HTMLInputElement;
+		if (userTitleInput) userTitleInput.value = cf.userTitleFormat ?? '';
+		if (aiTitleInput) aiTitleInput.value = cf.aiTitleFormat ?? '';
+		if (turnSepInput) turnSepInput.value = cf.turnSeparator ?? '';
+		if (qaSepInput) qaSepInput.value = cf.qaSeparator ?? '';
+	} else {
+		const userTitleInput = document.getElementById('chat-user-title') as HTMLInputElement;
+		const aiTitleInput = document.getElementById('chat-ai-title') as HTMLInputElement;
+		const turnSepInput = document.getElementById('chat-turn-separator') as HTMLInputElement;
+		const qaSepInput = document.getElementById('chat-qa-separator') as HTMLInputElement;
+		if (userTitleInput) userTitleInput.value = '';
+		if (aiTitleInput) aiTitleInput.value = '';
+		if (turnSepInput) turnSepInput.value = '';
+		if (qaSepInput) qaSepInput.value = '';
+	}
+}
+
+function renderUserAttrFields(existingAttr?: UserAttribute): void {
+	const container = document.getElementById('user-attr-fields');
+	if (!container) return;
+
+	const typeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
+	const type = typeSelect?.value ?? 'attr';
+
+	let html = '';
+
+	if (type === 'attr') {
+		const attr = existingAttr && 'attr' in existingAttr ? existingAttr.attr : '';
+		const value = existingAttr && 'attr' in existingAttr ? existingAttr.value : '';
+		html = `
+			<div class="setting-item">
+				<label for="user-attr-attr">속성명</label>
+				<input type="text" id="user-attr-attr" placeholder="data-message-author-role" value="${escapeHtml(attr)}" />
+			</div>
+			<div class="setting-item">
+				<label for="user-attr-value">속성값</label>
+				<input type="text" id="user-attr-value" placeholder="user" value="${escapeHtml(value)}" />
+			</div>
+		`;
+	} else if (type === 'tag') {
+		const tag = existingAttr && 'tag' in existingAttr ? existingAttr.tag : '';
+		html = `
+			<div class="setting-item">
+				<label for="user-attr-tag">태그명</label>
+				<input type="text" id="user-attr-tag" placeholder="user-query" value="${escapeHtml(tag)}" />
+			</div>
+		`;
+	} else if (type === 'containerSelector') {
+		const cs = existingAttr && 'containerSelector' in existingAttr ? existingAttr : null;
+		html = `
+			<div class="setting-item">
+				<label for="user-attr-container">컨테이너 선택자</label>
+				<input type="text" id="user-attr-container" placeholder=".turn-content" value="${escapeHtml(cs?.containerSelector ?? '')}" />
+			</div>
+			<div class="setting-item">
+				<label for="user-attr-user-class">사용자 클래스 (쉼표 구분)</label>
+				<input type="text" id="user-attr-user-class" placeholder="human-turn" value="${escapeHtml(cs?.userClass.join(', ') ?? '')}" />
+			</div>
+			<div class="setting-item">
+				<label for="user-attr-ai-class">AI 클래스 (쉼표 구분)</label>
+				<input type="text" id="user-attr-ai-class" placeholder="model-response" value="${escapeHtml(cs?.aiClass.join(', ') ?? '')}" />
+			</div>
+		`;
+	} else if (type === 'htmlMatch') {
+		const hm = existingAttr && 'htmlMatch' in existingAttr ? existingAttr.htmlMatch : [];
+		html = `
+			<div class="setting-item">
+				<label for="user-attr-html-match">HTML 키워드 (쉼표 구분)</label>
+				<div class="setting-item-description">사용자 메시지의 HTML에 포함된 키워드</div>
+				<input type="text" id="user-attr-html-match" placeholder="user-message, from-user" value="${escapeHtml(hm.join(', '))}" />
+			</div>
+		`;
+	}
+
+	container.innerHTML = html;
+}
+
+function readUserAttribute(type: string): UserAttribute {
+	if (type === 'attr') {
+		const attr = (document.getElementById('user-attr-attr') as HTMLInputElement)?.value ?? '';
+		const value = (document.getElementById('user-attr-value') as HTMLInputElement)?.value ?? '';
+		return { attr, value };
+	} else if (type === 'tag') {
+		const tag = (document.getElementById('user-attr-tag') as HTMLInputElement)?.value ?? '';
+		return { tag };
+	} else if (type === 'containerSelector') {
+		const containerSelector = (document.getElementById('user-attr-container') as HTMLInputElement)?.value ?? '';
+		const userClassStr = (document.getElementById('user-attr-user-class') as HTMLInputElement)?.value ?? '';
+		const aiClassStr = (document.getElementById('user-attr-ai-class') as HTMLInputElement)?.value ?? '';
+		const userClass = userClassStr.split(',').map(s => s.trim()).filter(Boolean);
+		const aiClass = aiClassStr.split(',').map(s => s.trim()).filter(Boolean);
+		return { containerSelector, userClass, aiClass };
+	} else {
+		const htmlMatchStr = (document.getElementById('user-attr-html-match') as HTMLInputElement)?.value ?? '';
+		const htmlMatch = htmlMatchStr.split(',').map(s => s.trim()).filter(Boolean);
+		return { htmlMatch };
+	}
+}
+
+function readAIChatFields(template: Template): void {
+	const emoji = (document.getElementById('chat-emoji') as HTMLInputElement)?.value.trim();
+	const authorLabel = (document.getElementById('chat-author-label') as HTMLInputElement)?.value.trim();
+	const titlePrefix = (document.getElementById('chat-title-prefix') as HTMLInputElement)?.value;
+
+	template.emoji = emoji || undefined;
+	template.authorLabel = authorLabel || undefined;
+	template.titlePrefix = titlePrefix || undefined;
+
+	const hostname = (document.getElementById('chat-hostname') as HTMLInputElement)?.value.trim();
+
+	if (!hostname) {
+		// 호스트명 없음 = AI Chat 모드 비활성화
+		template.siteConfig = undefined;
+		template.chatFormat = undefined;
+		return;
+	}
+
+	const typeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
+	const type = typeSelect?.value ?? 'attr';
+
+	const contentSelector = (document.getElementById('chat-content-selector') as HTMLInputElement)?.value.trim();
+	const ignoreSelector = (document.getElementById('chat-ignore-selector') as HTMLInputElement)?.value.trim();
+	const deduplicate = (document.getElementById('chat-deduplicate') as HTMLInputElement)?.checked;
+	const scrollToLoad = (document.getElementById('chat-scroll-to-load') as HTMLInputElement)?.checked;
+
+	const siteConfig: SiteConfig = {
+		hostname,
+		messageSelector: (document.getElementById('chat-message-selector') as HTMLInputElement)?.value.trim() ?? '',
+		userAttribute: readUserAttribute(type),
+		...(contentSelector ? { contentSelector } : {}),
+		...(ignoreSelector ? { ignoreSelector } : {}),
+		...(deduplicate ? { deduplicate: true } : {}),
+		...(scrollToLoad ? { scrollToLoad: true } : {}),
+	};
+
+	const chatFormat: ChatFormat = {
+		userTitleFormat: (document.getElementById('chat-user-title') as HTMLInputElement)?.value ?? '',
+		aiTitleFormat: (document.getElementById('chat-ai-title') as HTMLInputElement)?.value ?? '',
+		turnSeparator: (document.getElementById('chat-turn-separator') as HTMLInputElement)?.value ?? '',
+		qaSeparator: (document.getElementById('chat-qa-separator') as HTMLInputElement)?.value ?? '',
+	};
+
+	template.siteConfig = siteConfig;
+	template.chatFormat = chatFormat;
 }

@@ -1,3 +1,5 @@
+import { extractAIChatContent } from './utils/ai-chat-extractor';
+
 interface ContentResponse {
 	content: string;
 	selectedHtml: string;
@@ -7,6 +9,17 @@ interface ContentResponse {
 }
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+	if (request.action === "extractAIChat") {
+		if (!request.siteConfig || !request.chatFormat) {
+			sendResponse({ error: 'siteConfig 또는 chatFormat이 없습니다.' });
+			return true;
+		}
+		extractAIChatContent(request.siteConfig, request.chatFormat)
+			.then(result => sendResponse(result))
+			.catch(err => sendResponse({ error: (err as Error).message }));
+		return true; // 비동기 응답을 위해 채널 유지
+	}
+
 	if (request.action === "getPageContent") {
 		let selectedHtml = '';
 		const selection = window.getSelection();
