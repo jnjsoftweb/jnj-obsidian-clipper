@@ -1,0 +1,210 @@
+.popup:has(.variables-panel.show) {
+	width: 500px;
+	transition: width 0.1s ease-in-out;
+	overflow: hidden;
+}
+.popup {
+	width: 340px;
+	height: 500px;
+	overflow: hidden;
+	transition: width 0.1s ease-in-out;
+	::selection {
+		background-color: var(--text-selection);
+	}
+	#open-settings {
+		z-index: 10;
+		position: fixed;
+		top: 6px;
+		right: 4px;
+		border-radius: 4px;
+		user-select: none;
+		background-color: transparent;
+	}
+	.error-message {
+		margin: 0;
+		padding: 24px 12px;
+		text-align: center;
+		color: var(--text-muted);
+		font-size: var(--font-ui-smaller);
+	}
+	::-webkit-scrollbar{
+		width: 8px;
+	}
+	::-webkit-scrollbar-track-piece{
+		background-color: var(--background-primary);
+	}
+	::-webkit-scrollbar-thumb{
+		background-color: var(--background-modifier-border-hover);
+		outline: 2px solid var(--background-primary);
+		outline-offset: -2px;
+		border: .1px solid var(--background-primary);
+		border-radius: 10px;
+	}
+	::-webkit-scrollbar-thumb:hover{
+		background-color: var(--background-modifier-border-focus);
+	}
+}
+.clipper {
+	display: flex;
+	flex-direction: column;
+	padding-top: 6px;
+	min-height: 500px;
+	height: 100vh;
+
+	#template-select {
+		appearance: none;
+		border-radius: 0;
+		border: none;
+		padding: 6px 8px 2px 12px;
+		width: calc(100% - 36px);
+		margin-inline-start: 0;
+		margin-inline-end: auto;
+		font-weight: 500;
+		color: var(--text-muted);
+		cursor: pointer;
+		&:hover {
+			color: var(--text-normal);
+		}
+		&:active,
+		&:focus {
+			color: var(--text-normal);
+			box-shadow: none;
+		}
+	}
+
+	#template-container.hidden ~ #note-name-field {
+		padding: 4px 58px 10px 12px;
+	}
+	#note-name-field {
+		border: none;
+		border-radius: 0;
+		padding: 6px 12px 10px 12px;
+		font-size: var(--font-ui-medium);
+		font-weight: 600;
+		resize: none;
+		min-height: 2rem;
+		max-height: 6rem;
+		overflow-y: auto;
+		&:active,
+		&:focus {
+			box-shadow: none;
+		}
+	}
+
+	.metadata-properties-header {
+		padding: 0 12px 6px;
+		font-size: var(--font-ui-small);
+		font-weight: 500;
+		color: var(--text-muted);
+		user-select: none;
+		cursor: pointer;
+		&:hover {
+			color: var(--text-normal);
+		}
+	}
+
+	.metadata-properties {
+		--input-height: 28px;
+		padding: 2px 8px 8px;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		max-height: 240px;
+		overflow-y: scroll;
+		&:empty {
+			display: none;
+		}
+		&.collapsed {
+			display: none;
+		}
+		.metadata-property {
+			display: flex;
+			flex-direction: row;
+			gap: 2px;
+			align-items: center;
+			border-radius: 4px;
+			border: 1px solid transparent;
+			transition:
+				box-shadow .15s ease-in-out,
+				border .15s ease-in-out;
+			&:hover {
+				border-color: var(--background-modifier-border);
+			}
+			&:focus-within {
+				border-color: var(--background-modifier-border-focus);
+				box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+				transition:
+					box-shadow .15s ease-in-out,
+					border .15s ease-in-out;
+			}
+			label {
+				width: 120px;
+				padding-inline-start: 6px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				font-weight: 400;
+				color: var(--text-muted);
+				font-size: var(--font-ui-small);
+				user-select: none;
+				margin: 0;
+			}
+			input {
+				border: none;
+				&:hover,
+				&:active,
+				&:focus {
+					border: none;
+					box-shadow: none;
+				}
+			}
+		}
+	}
+
+	#note-content-container {
+		display: flex;
+		flex-grow: 1;
+		#note-content-field {
+			border-radius: 0;
+			border: none;
+			border-top: 1px solid var(--background-modifier-border);
+			padding: 10px;
+			resize: none;
+			&:active,
+			&:focus {
+				box-shadow: none;
+			}
+		}
+	}
+
+	.clipper-footer {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 10px 10px;
+		border-top: 1px solid var(--background-modifier-border);
+		background-color: var(--background-primary);
+		button {
+			font-weight: 500;
+		}
+	}
+	.vault-path-container {
+		display: flex;
+		flex-direction: row;
+		gap: 8px;
+		#vault-select {
+			font-weight: 500;
+			min-width: 100px;
+			cursor: pointer;
+		}
+	}
+}
+
+#show-variables {
+	display: none;
+	&.show {
+		display: flex;
+	}
+}
