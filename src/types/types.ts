@@ -1,3 +1,5 @@
+import { SiteConfig, ChatFormat } from './site-config';
+
 export interface Template {
 	id: string;
 	name: string;
@@ -10,6 +12,12 @@ export interface Template {
 	specificNoteName?: string;
 	dailyNoteFormat?: string;
 	vault?: string;
+	// AI chat 전용 필드 (선택적 — 값이 있으면 AI chat 템플릿으로 동작)
+	siteConfig?: SiteConfig;
+	chatFormat?: ChatFormat;
+	emoji?: string;
+	authorLabel?: string;
+	titlePrefix?: string;
 }
 
 export interface Property {
