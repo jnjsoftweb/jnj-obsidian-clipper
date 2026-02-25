@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Chat Exporter 설정</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+
+    .container { display: flex; max-width: 960px; margin: 20px auto; gap: 16px; }
+
+    /* 왼쪽: 사이트 목록 */
+    .site-list { width: 220px; background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .site-list h3 { font-size: 14px; margin-bottom: 10px; color: #555; }
+    .site-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .site-item:hover { background: #e8f0fe; }
+    .site-item.active { background: #007bff; color: white; }
+    .site-item .site-emoji { font-size: 16px; }
+
+    .btn-group { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .btn { padding: 7px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; text-align: center; }
+    .btn-add { background: #28a745; color: white; }
+    .btn-add:hover { background: #218838; }
+    .btn-reset { background: #6c757d; color: white; }
+    .btn-reset:hover { background: #5a6268; }
+    .btn-delete { background: #dc3545; color: white; }
+    .btn-delete:hover { background: #c82333; }
+
+    /* 오른쪽: 편집 폼 */
+    .edit-panel { flex: 1; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .edit-panel h3 { font-size: 16px; margin-bottom: 16px; color: #333; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; font-weight: 600; }
+    .form-group input, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: 'Consolas', 'Monaco', monospace; }
+    .form-group textarea { height: 60px; resize: vertical; }
+    .form-group .hint { font-size: 11px; color: #999; margin-top: 3px; }
+
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+
+    .save-bar { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-save { background: #007bff; color: white; padding: 8px 24px; font-size: 13px; }
+    .btn-save:hover { background: #0056b3; }
+
+    .empty-state { text-align: center; color: #999; padding: 40px; font-size: 14px; }
+
+    /* 탭 내비게이션 */
+    .tab-nav { display: flex; gap: 2px; margin-bottom: 0; }
+    .tab-btn { padding: 8px 16px; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; font-weight: 600; background: #e0e0e0; color: #666; }
+    .tab-btn.active { background: #007bff; color: white; }
+    .tab-btn:hover:not(.active) { background: #d0d0d0; }
+
+    /* 출력 형식 패널 */
+    .format-panel { background: white; border-radius: 0 8px 8px 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .format-panel h3 { font-size: 16px; margin-bottom: 16px; color: #333; }
+    .preview-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #555; max-height: 200px; overflow-y: auto; margin-top: 8px; }
+
+    /* 알림 */
+    .toast { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #28a745; color: white; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity 0.3s; z-index: 100; }
+    .toast.show { opacity: 1; }
+
+    /* userAttribute 편집 영역 */
+    .attr-type-select { margin-bottom: 8px; }
+    .attr-type-select select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+    .attr-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+    .attr-fields input { flex: 1; min-width: 120px; }
+  </style>
+</head>
+<body>
+  <div style="max-width: 960px; margin: 20px auto; padding: 0 16px;">
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabFormat">출력 형식</button>
+      <button class="tab-btn" id="tabSites">사이트 설정</button>
+    </div>
+  </div>
+
+  <!-- 출력 형식 탭 -->
+  <div id="formatTab" style="max-width: 960px; margin: 0 auto; padding: 0 16px;">
+    <div class="format-panel">
+      <h3>출력 형식 설정</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>작성자 이름 (author)</label>
+          <input type="text" id="fmtAuthor" placeholder="예: 홍길동">
+          <div class="hint">frontmatter의 {author}에 삽입됩니다</div>
+        </div>
+        <div class="form-group">
+          <label>이메일 (email)</label>
+          <input type="text" id="fmtEmail" placeholder="예: user@gmail.com">
+          <div class="hint">frontmatter의 {email}에 삽입됩니다</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>저장 경로 (하위 폴더)</label>
+          <input type="text" id="fmtSavePath" placeholder="예: AI-Chats/exports">
+          <div class="hint">다운로드 폴더 기준 하위 경로. 비워두면 기본 다운로드 폴더에 저장됩니다.</div>
+        </div>
+        <div class="form-group">
+          <label>파일명 형식</label>
+          <input type="text" id="fmtFilename" value="{model}_{title}_{date}">
+          <div class="hint">변수: {title}, {model}, {date} (20260225), {time} (143022), {datetime} (20260225_143022). 확장자 .md는 자동 추가됩니다.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>파일명 미리보기</label>
+        <div class="preview-box" id="filenamePreview" style="max-height: 40px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Frontmatter</label>
+        <textarea id="fmtFrontmatter" rows="8" style="height:auto;">---
+title: {title}
+model: {model}
+author: {author}
+email: {email}
+url: {url}
+createdAt: {createdAt}
+messageCount: {messageCount}
+tags: []
+---</textarea>
+        <div class="hint">사용 가능한 변수: {title} = 페이지 제목, {model} = AI 이름, {author} = 작성자, {email} = 이메일, {url} = 페이지 URL, {createdAt} = 생성 일시, {messageCount} = 메시지 수. 비워두면 frontmatter 없이 출력됩니다.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>사용자 타이틀 형식</label>
+          <input type="text" id="fmtUserTitle" value="### 👤 사용자 (User)">
+          <div class="hint">사용자 메시지 앞에 표시되는 제목 라인</div>
+        </div>
+        <div class="form-group">
+          <label>AI 타이틀 형식</label>
+          <input type="text" id="fmtAiTitle" value="### {emoji} {authorLabel}">
+          <div class="hint">사용 가능한 변수: {emoji}, {authorLabel} (사이트별 자동 치환)</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>사용자-AI 채팅 구분자</label>
+          <input type="text" id="fmtTurnSeparator" value="---">
+          <div class="hint">사용자 메시지와 AI 응답 사이의 구분선</div>
+        </div>
+        <div class="form-group">
+          <label>질문-응답 세트 구분자</label>
+          <input type="text" id="fmtQaSeparator" value="---">
+          <div class="hint">하나의 Q&amp;A 세트와 다음 세트 사이의 구분선</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>미리보기</label>
+        <div class="preview-box" id="formatPreview"></div>
+      </div>
+
+      <div class="save-bar">
+        <button class="btn btn-reset" id="resetFormatBtn">기본값으로 초기화</button>
+        <button class="btn btn-save" id="saveFormatBtn">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사이트 설정 탭 -->
+  <div id="sitesTab" style="max-width: 960px; margin: 0 auto; padding: 0 16px; display: none;">
+  <div class="container">
+    <div class="site-list">
+      <h3>사이트 목록</h3>
+      <div id="siteListItems"></div>
+      <div class="btn-group">
+        <button class="btn btn-add" id="addSiteBtn">+ 새 사이트 추가</button>
+        <button class="btn btn-reset" id="resetBtn">기본값으로 초기화</button>
+      </div>
+    </div>
+
+    <div class="edit-panel" id="editPanel">
+      <div class="empty-state" id="emptyState">왼쪽에서 사이트를 선택하세요.</div>
+      <div id="editForm" style="display:none;">
+        <h3 id="editTitle">사이트 설정</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>사이트 ID</label>
+            <input type="text" id="cfgId" placeholder="예: chatgpt">
+            <div class="hint">고유 식별자 (영문, 변경 불가)</div>
+          </div>
+          <div class="form-group">
+            <label>사이트 이름</label>
+            <input type="text" id="cfgName" placeholder="예: ChatGPT">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hostname</label>
+            <input type="text" id="cfgHostname" placeholder="예: chatgpt.com">
+            <div class="hint">URL의 호스트명 (부분 매칭)</div>
+          </div>
+          <div class="form-group">
+            <label>이모지</label>
+            <input type="text" id="cfgEmoji" placeholder="예: 🤖" style="width: 60px;">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>AI 표시 이름</label>
+            <input type="text" id="cfgAuthorLabel" placeholder="예: 챗GPT (ChatGPT)">
+          </div>
+          <div class="form-group">
+            <label>제목 접두사</label>
+            <input type="text" id="cfgTitlePrefix" placeholder="예: ChatGPT 대화 내역">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>메시지 셀렉터 (messageSelector)</label>
+          <input type="text" id="cfgMessageSelector" placeholder="예: [data-message-author-role]">
+          <div class="hint">대화 메시지 목록을 가져올 CSS 셀렉터</div>
+        </div>
+
+        <div class="form-group">
+          <label>사용자 판별 방식 (userAttribute)</label>
+          <div class="attr-type-select">
+            <select id="cfgUserAttrType">
+              <option value="attr">속성값 비교 (attr + value)</option>
+              <option value="tag">태그명 비교 (tag)</option>
+              <option value="container">컨테이너 클래스 (containerSelector)</option>
+              <option value="htmlMatch">HTML 키워드 매칭 (htmlMatch)</option>
+            </select>
+          </div>
+          <div id="attrFields"></div>
+        </div>
+
+        <div class="form-group">
+          <label>콘텐츠 셀렉터 (contentSelector)</label>
+          <input type="text" id="cfgContentSelector" placeholder="비워두면 메시지 요소 자체를 사용">
+          <div class="hint">메시지 내 실제 콘텐츠 영역 (비워두면 메시지 자체 사용)</div>
+        </div>
+
+        <div class="form-group">
+          <label>제거할 요소 셀렉터 (ignoreSelector)</label>
+          <input type="text" id="cfgIgnoreSelector" placeholder="예: button, svg, img">
+          <div class="hint">마크다운 변환 시 제거할 UI 요소들</div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="cfgDeduplicate"> 중복 제거 (deduplicate)
+          </label>
+          <div class="hint">같은 텍스트의 메시지를 중복 제거</div>
+        </div>
+
+        <div class="save-bar">
+          <button class="btn btn-delete" id="deleteSiteBtn">이 사이트 삭제</button>
+          <button class="btn btn-save" id="saveBtn">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
