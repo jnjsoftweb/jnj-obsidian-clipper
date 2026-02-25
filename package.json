@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-clipper",
+	"name": "jnj-obsidian-clipper",
 	"version": "0.1.0",
-	"description": "Official web clipper for Obsidian.",
+	"description": "Web clipper for ai-chat-web and other sites to obsidian in markdown by jnjsoft",
 	"scripts": {
 		"build": "tsc && webpack",
 		"dev": "tsc -w & webpack --watch"

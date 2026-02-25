@@ -6,7 +6,7 @@
 
 ### clone obisidian git repository
 
-obsidian-clipper-923946cf6612da51c694167e63afed2524620680.zip
+jnj-obsidian-clipper-923946cf6612da51c694167e63afed2524620680.zip
 
 ### extract codes
 

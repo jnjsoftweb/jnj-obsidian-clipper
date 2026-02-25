@@ -12,7 +12,7 @@ The extension is not yet available on the Chrome Web Store as it is still in bet
 
 ### Installing manually
 
-- Go to [releases](https://github.com/obsidianmd/obsidian-clipper/releases) and download the latest version
+- Go to [releases](https://github.com/obsidianmd/jnj-obsidian-clipper/releases) and download the latest version
 - Drag and drop the `.zip` in `chrome://extensions/`
 
 ### Run the extension locally

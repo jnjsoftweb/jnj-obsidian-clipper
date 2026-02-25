@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "Obsidian Web Clipper",
+	"name": "JnJ JnJ Obsidian Clipper",
 	"version": "0.1.0",
 	"description": "Official web clipper extension for Obsidian. Clip content and save it to your Obsidian vault so you always have access to it, even offline.",
 	"permissions": [
@@ -27,8 +27,12 @@
 	},
 	"content_scripts": [
 		{
-			"matches": ["<all_urls>"],
-			"js": ["content.js"]
+			"matches": [
+				"<all_urls>"
+			],
+			"js": [
+				"content.js"
+			]
 		}
 	],
 	"commands": {
@@ -37,7 +41,7 @@
 				"default": "Ctrl+Shift+O",
 				"mac": "Command+Shift+O"
 			},
-			"description": "Open Obsidian Clipper"
+			"description": "Open JnJ Obsidian Clipper"
 		},
 		"quick_clip": {
 			"suggested_key": {
