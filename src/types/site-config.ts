@@ -30,6 +30,8 @@ export interface SiteConfig {
 	deduplicate?: boolean;
 	/** 가상 스크롤 대응 여부 (Google AI Studio) */
 	scrollToLoad?: boolean;
+	/** AI 모델명을 추출할 CSS 셀렉터 (없으면 template.authorLabel 사용) */
+	modelSelector?: string;
 }
 
 /**

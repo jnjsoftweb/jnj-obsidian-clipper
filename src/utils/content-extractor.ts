@@ -134,7 +134,7 @@ export async function sendExtractAIChat(
 	tabId: number,
 	siteConfig: SiteConfig,
 	chatFormat: ChatFormat
-): Promise<{ markdown: string; messageCount: number } | null> {
+): Promise<{ markdown: string; messageCount: number; modelName: string } | null> {
 	return new Promise((resolve) => {
 		chrome.tabs.sendMessage(
 			tabId,
@@ -147,7 +147,7 @@ export async function sendExtractAIChat(
 					);
 					resolve(null);
 				} else {
-					resolve(response as { markdown: string; messageCount: number });
+					resolve(response as { markdown: string; messageCount: number; modelName: string });
 				}
 			}
 		);

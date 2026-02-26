@@ -266,7 +266,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 								extraVariables = buildAIChatVariables(
 									chatResult.markdown,
 									chatResult.messageCount,
-									currentTemplate
+									currentTemplate,
+									chatResult.modelName
 								);
 							} else {
 								console.warn('[AI Chat] content script 응답 없음. 페이지를 새로고침 후 다시 시도하세요.');
@@ -368,7 +369,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 								extraVariables = buildAIChatVariables(
 									chatResult.markdown,
 									chatResult.messageCount,
-									currentTemplate
+									currentTemplate,
+									chatResult.modelName
 								);
 							} else {
 								console.warn('[AI Chat] content script 응답 없음. 페이지를 새로고침 후 다시 시도하세요.');

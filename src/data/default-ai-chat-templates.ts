@@ -12,19 +12,21 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		id: 'default-ai-chatgpt',
 		name: 'ChatGPT',
 		emoji: '🤖',
-		authorLabel: '챗GPT (ChatGPT)',
+		authorLabel: 'ChatGPT',
 		titlePrefix: 'ChatGPT 대화 내역',
 		behavior: 'create',
 		noteNameFormat: '{{titlePrefix}} — {{title}}',
 		path: 'AI/ChatGPT',
 		noteContentFormat: '{{chatContent}}',
 		properties: [
-			{ id: 'p-chatgpt-title',    name: 'title',        value: '{{title}}',        type: 'text' },
-			{ id: 'p-chatgpt-source',   name: 'source',       value: '{{url}}',          type: 'text' },
-			{ id: 'p-chatgpt-model',    name: 'model',        value: '{{model}}',        type: 'text' },
-			{ id: 'p-chatgpt-count',    name: 'messageCount', value: '{{messageCount}}', type: 'number' },
-			{ id: 'p-chatgpt-created',  name: 'createdAt',    value: '{{date}}',         type: 'date' },
-			{ id: 'p-chatgpt-tags',     name: 'tags',         value: 'ai-chat, chatgpt', type: 'multitext' }
+			{ id: 'p-chatgpt-title', name: 'title', value: '{{title}}', type: 'text' },
+			{ id: 'p-chatgpt-source', name: 'source', value: '{{url}}', type: 'text' },
+			{ id: 'p-chatgpt-model', name: 'model', value: '{{model}}', type: 'text' },
+			{ id: 'p-chatgpt-count', name: 'messageCount', value: '{{messageCount}}', type: 'number' },
+			{ id: 'p-chatgpt-created', name: 'createdAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-chatgpt-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-chatgpt-tags', name: 'tags', value: 'ai-chat, chatgpt', type: 'multitext' },
+			{ id: 'p-chatgpt-desc', name: 'description', value: '{{title}}', type: 'text' }
 		],
 		triggers: ['https://chatgpt.com/'],
 		siteConfig: {
@@ -44,19 +46,21 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		id: 'default-ai-claude',
 		name: 'Claude',
 		emoji: '🧠',
-		authorLabel: '클로드 (Claude)',
+		authorLabel: 'Claude',
 		titlePrefix: 'Claude 대화 내역',
 		behavior: 'create',
 		noteNameFormat: '{{titlePrefix}} — {{title}}',
 		path: 'AI/Claude',
 		noteContentFormat: '{{chatContent}}',
 		properties: [
-			{ id: 'p-claude-title',   name: 'title',        value: '{{title}}',        type: 'text' },
-			{ id: 'p-claude-source',  name: 'source',       value: '{{url}}',          type: 'text' },
-			{ id: 'p-claude-model',   name: 'model',        value: '{{model}}',        type: 'text' },
-			{ id: 'p-claude-count',   name: 'messageCount', value: '{{messageCount}}', type: 'number' },
-			{ id: 'p-claude-created', name: 'createdAt',    value: '{{date}}',         type: 'date' },
-			{ id: 'p-claude-tags',    name: 'tags',         value: 'ai-chat, claude',  type: 'multitext' }
+			{ id: 'p-claude-title', name: 'title', value: '{{title}}', type: 'text' },
+			{ id: 'p-claude-source', name: 'source', value: '{{url}}', type: 'text' },
+			{ id: 'p-claude-model', name: 'model', value: '{{model}}', type: 'text' },
+			{ id: 'p-claude-count', name: 'messageCount', value: '{{messageCount}}', type: 'number' },
+			{ id: 'p-claude-created', name: 'createdAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-claude-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-claude-tags', name: 'tags', value: 'ai-chat, claude', type: 'multitext' },
+			{ id: 'p-claude-desc', name: 'description', value: '{{title}}', type: 'text' }
 		],
 		triggers: ['https://claude.ai/'],
 		siteConfig: {
@@ -83,12 +87,14 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		path: 'AI/Gemini',
 		noteContentFormat: '{{chatContent}}',
 		properties: [
-			{ id: 'p-gemini-title',   name: 'title',        value: '{{title}}',        type: 'text' },
-			{ id: 'p-gemini-source',  name: 'source',       value: '{{url}}',          type: 'text' },
-			{ id: 'p-gemini-model',   name: 'model',        value: '{{model}}',        type: 'text' },
-			{ id: 'p-gemini-count',   name: 'messageCount', value: '{{messageCount}}', type: 'number' },
-			{ id: 'p-gemini-created', name: 'createdAt',    value: '{{date}}',         type: 'date' },
-			{ id: 'p-gemini-tags',    name: 'tags',         value: 'ai-chat, gemini',  type: 'multitext' }
+			{ id: 'p-gemini-title', name: 'title', value: '{{title}}', type: 'text' },
+			{ id: 'p-gemini-source', name: 'source', value: '{{url}}', type: 'text' },
+			{ id: 'p-gemini-model', name: 'model', value: '{{model}}', type: 'text' },
+			{ id: 'p-gemini-count', name: 'messageCount', value: '{{messageCount}}', type: 'number' },
+			{ id: 'p-gemini-created', name: 'createdAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-gemini-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-gemini-tags', name: 'tags', value: 'ai-chat, gemini', type: 'multitext' },
+			{ id: 'p-gemini-desc', name: 'description', value: '{{title}}', type: 'text' }
 		],
 		triggers: ['https://gemini.google.com/'],
 		siteConfig: {
@@ -108,19 +114,21 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		id: 'default-ai-aistudio',
 		name: 'Google AI Studio',
 		emoji: '⚙️',
-		authorLabel: '모델 (Model)',
+		authorLabel: 'Google AI Studio',
 		titlePrefix: 'Google AI Studio 대화 내역',
 		behavior: 'create',
 		noteNameFormat: '{{titlePrefix}} — {{title}}',
 		path: 'AI/AIStudio',
 		noteContentFormat: '{{chatContent}}',
 		properties: [
-			{ id: 'p-aistudio-title',   name: 'title',        value: '{{title}}',           type: 'text' },
-			{ id: 'p-aistudio-source',  name: 'source',       value: '{{url}}',             type: 'text' },
-			{ id: 'p-aistudio-model',   name: 'model',        value: '{{model}}',           type: 'text' },
-			{ id: 'p-aistudio-count',   name: 'messageCount', value: '{{messageCount}}',    type: 'number' },
-			{ id: 'p-aistudio-created', name: 'createdAt',    value: '{{date}}',            type: 'date' },
-			{ id: 'p-aistudio-tags',    name: 'tags',         value: 'ai-chat, ai-studio',  type: 'multitext' }
+			{ id: 'p-aistudio-title', name: 'title', value: '{{title}}', type: 'text' },
+			{ id: 'p-aistudio-source', name: 'source', value: '{{url}}', type: 'text' },
+			{ id: 'p-aistudio-model', name: 'model', value: '{{model}}', type: 'text' },
+			{ id: 'p-aistudio-count', name: 'messageCount', value: '{{messageCount}}', type: 'number' },
+			{ id: 'p-aistudio-created', name: 'createdAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-aistudio-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-aistudio-tags', name: 'tags', value: 'ai-chat, ai-studio', type: 'multitext' },
+			{ id: 'p-aistudio-desc', name: 'description', value: '{{title}}', type: 'text' }
 		],
 		triggers: ['https://aistudio.google.com/'],
 		siteConfig: {
@@ -129,7 +137,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			userAttribute: { containerSelector: '.chat-turn-container', userClass: ['user'], aiClass: ['model'] },
 			contentSelector: '.turn-content',
 			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only, .actions-container, .author-label, ms-thought-chunk",
-			scrollToLoad: true
+			scrollToLoad: true,
+			modelSelector: '.chat-turn-container.model .author-label'
 		},
 		chatFormat: {
 			userTitleFormat: '### 👤 사용자 (User)',
@@ -142,19 +151,21 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		id: 'default-ai-genspark',
 		name: 'Genspark',
 		emoji: '✨',
-		authorLabel: '젠스파크 (Genspark)',
+		authorLabel: 'Genspark',
 		titlePrefix: 'Genspark 대화 내역',
 		behavior: 'create',
 		noteNameFormat: '{{titlePrefix}} — {{title}}',
 		path: 'AI/Genspark',
 		noteContentFormat: '{{chatContent}}',
 		properties: [
-			{ id: 'p-genspark-title',   name: 'title',        value: '{{title}}',           type: 'text' },
-			{ id: 'p-genspark-source',  name: 'source',       value: '{{url}}',             type: 'text' },
-			{ id: 'p-genspark-model',   name: 'model',        value: '{{model}}',           type: 'text' },
-			{ id: 'p-genspark-count',   name: 'messageCount', value: '{{messageCount}}',    type: 'number' },
-			{ id: 'p-genspark-created', name: 'createdAt',    value: '{{date}}',            type: 'date' },
-			{ id: 'p-genspark-tags',    name: 'tags',         value: 'ai-chat, genspark',   type: 'multitext' }
+			{ id: 'p-genspark-title', name: 'title', value: '{{title}}', type: 'text' },
+			{ id: 'p-genspark-source', name: 'source', value: '{{url}}', type: 'text' },
+			{ id: 'p-genspark-model', name: 'model', value: '{{model}}', type: 'text' },
+			{ id: 'p-genspark-count', name: 'messageCount', value: '{{messageCount}}', type: 'number' },
+			{ id: 'p-genspark-created', name: 'createdAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-genspark-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
+			{ id: 'p-genspark-tags', name: 'tags', value: 'ai-chat, genspark', type: 'multitext' },
+			{ id: 'p-genspark-desc', name: 'description', value: '{{title}}', type: 'text' }
 		],
 		triggers: ['https://www.genspark.ai/'],
 		siteConfig: {

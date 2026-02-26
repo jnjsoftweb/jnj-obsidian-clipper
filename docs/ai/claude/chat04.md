@@ -241,3 +241,102 @@ google ai studio의 경우 페이지 스크롤을 사용하는데, 페이지 로
   중앙에 정확히 가져오므로, CDK Virtual Scroll이 해당 요소를 렌더링할 수밖에 없습니다. 스크롤도 시각적으로
    보이고 페이지도 자연스럽게 초기화됩니다.
 
+
+========================
+
+"""
+1. template default 값을 아래와 같이 변경해주세요.
+
+title	{{title}}
+source	{{url}}
+model	{{model}}
+messageCount	{{messageCount}}
+createdAt	{{date}}
+publishedAt	{{date}}
+tags    ai-chat, ai-studio
+description	{{title}}
+
+
+2. {{model}} 값은 현재 {{title}}로 들어가 있는 인공지능 모델명으로 넣어주세요.
+title은 어디에서 추출되는 값인가요? 현재는 인공지능 모델명이 title에 들어가 있어요.
+title은 markdown 노트의 가장 처음에 나오는 H1 '# ' 뒤의 내용으로 해주세요.
+"""
+
+  ---                                                                                   변경 내용
+                                                                                        1. 모든 템플릿 properties에 publishedAt, description 추가
+  (default-ai-chat-templates.ts)
+
+  5개 템플릿(ChatGPT, Claude, Gemini, Google AI Studio, Genspark) 모두 동일하게 적용:
+  title        {{title}}
+  source       {{url}}
+  model        {{model}}
+  messageCount {{messageCount}}
+  createdAt    {{date}}
+  publishedAt  {{date}}   ← 신규
+  tags         ai-chat, xxx
+  description  {{title}}  ← 신규
+
+  2. {{model}} 값 변경 (ai-chat-extractor.ts → buildAIChatVariables)
+
+  ┌───────────┬─────────────────────────────┬─────────────────────────────────────┐
+  │   변수    │            이전             │                이후                 │
+  ├───────────┼─────────────────────────────┼─────────────────────────────────────┤
+  │           │ template.authorLabel (=     │ chatContent 첫 H1 = document.title  │
+  │ {{model}} │ "모델 (Model)")             │ (= "Gemini 2.0 Flash" 등 실제       │
+  │           │                             │ 모델명)                             │
+  ├───────────┼─────────────────────────────┼─────────────────────────────────────┤
+  │ {{title}} │ meta/title 태그에서 추출    │ chatContent 첫 H1과 동일            │
+  │           │                             │ (오버라이드)                        │
+  └───────────┴─────────────────────────────┴─────────────────────────────────────┘
+
+  ---
+  참고: 현재 extractAIChatContent에서 chatContent 첫 줄을 # ${document.title}로
+  생성하기 때문에, {{model}}과 {{title}}은 동일한 값(= 페이지 타이틀)이 됩니다.
+
+  AI Studio의 경우 document.title = "Gemini 2.0 Flash" 같은 모델명이므로 {{model}}에
+  올바른 모델명이 들어가게 됩니다.
+
+=============
+
+"""
+{{title}}은 제목이 잘 들어가는데, {{model}} 도 {{title}} 값이 그대로 들어가고 있어요.
+"""
+
+  ---
+  변경 내용                                                                           
+  문제 원인: {{model}}과 {{title}} 둘 다 chatContent 첫 H1 값으로 설정되어 동일한 값이   출력됨
+
+  해결 방법: {{model}}은 실제 DOM에서 모델명을 추출, {{title}}은 첫 H1 유지
+
+  ┌──────────────────────────────┬─────────────────────────────────────────────────┐
+  │             파일             │                      변경                       │
+  ├──────────────────────────────┼─────────────────────────────────────────────────┤
+  │ site-config.ts               │ modelSelector?: string 필드 추가                │
+  ├──────────────────────────────┼─────────────────────────────────────────────────┤
+  │                              │ extractAIChatContent에서 modelSelector로 DOM    │
+  │ ai-chat-extractor.ts         │ 모델명 추출 후 반환, buildAIChatVariables에서   │
+  │                              │ modelName 파라미터 추가                         │
+  ├──────────────────────────────┼─────────────────────────────────────────────────┤
+  │ content-extractor.ts         │ sendExtractAIChat 반환 타입에 modelName 추가    │
+  ├──────────────────────────────┼─────────────────────────────────────────────────┤
+  │ popup.ts                     │ buildAIChatVariables 호출 시                    │
+  │                              │ chatResult.modelName 전달 (2곳)                 │
+  ├──────────────────────────────┼─────────────────────────────────────────────────┤
+  │ default-ai-chat-templates.ts │ AI Studio siteConfig에 modelSelector:           │
+  │                              │ '.chat-turn-container.model .author-label' 추가 │
+  └──────────────────────────────┴─────────────────────────────────────────────────┘
+
+  결과:
+  - Google AI Studio: {{model}} = .author-label 요소에서 추출 (e.g., "Gemini 2.0
+  Flash"), {{title}} = 대화 제목
+  - ChatGPT, Claude, Gemini, Genspark: {{model}} = template.authorLabel (fallback),
+  {{title}} = 대화 제목
+
+  참고: AI Studio의 .author-label 셀렉터(.chat-turn-container.model .author-label)가
+  실제 DOM 구조와 맞는지 확인이 필요합니다. 만약 모델명이 다른 셀렉터에 있다면
+  알려주세요.
+
+=====================
+
+
+

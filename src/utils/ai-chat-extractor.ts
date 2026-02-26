@@ -274,7 +274,7 @@ function convertTableToMarkdown(table: Element): string {
 export async function extractAIChatContent(
 	siteConfig: SiteConfig,
 	chatFormat: ChatFormat
-): Promise<{ markdown: string; messageCount: number }> {
+): Promise<{ markdown: string; messageCount: number; modelName: string }> {
 	// 가상 스크롤 대응
 	if (siteConfig.scrollToLoad) {
 		await scrollAllTurns(siteConfig.messageSelector);
@@ -318,9 +318,18 @@ export async function extractAIChatContent(
 		messageCount++;
 	});
 
+	// modelSelector가 있으면 DOM에서 모델명 추출
+	let modelName = '';
+	if (siteConfig.modelSelector) {
+		const modelEl = document.querySelector(siteConfig.modelSelector);
+		if (modelEl) {
+			modelName = modelEl.textContent?.trim() ?? '';
+		}
+	}
+
 	// 메시지가 없으면 빈 markdown 반환
 	if (messageCount === 0) {
-		return { markdown: '', messageCount: 0 };
+		return { markdown: '', messageCount: 0, modelName };
 	}
 
 	// 전체 조립: 제목 → 첫 구분자 → 대화 본문 → 마지막 구분자
@@ -329,7 +338,7 @@ export async function extractAIChatContent(
 	md += body;
 	if (chatFormat.qaSeparator) md += `${chatFormat.qaSeparator}\n\n`;
 
-	return { markdown: md, messageCount };
+	return { markdown: md, messageCount, modelName };
 }
 
 // ──────────────────────────────────────────────
@@ -343,12 +352,21 @@ export async function extractAIChatContent(
 export function buildAIChatVariables(
 	markdown: string,
 	messageCount: number,
-	template: Template
+	template: Template,
+	modelName?: string
 ): Record<string, string> {
+	// chatContent 첫 H1 ('# ...')에서 대화 제목(document.title) 추출
+	const firstH1Match = markdown.match(/^# (.+)$/m);
+	const title = firstH1Match ? firstH1Match[1].trim() : '';
+
+	// 모델명: DOM 추출값 → authorLabel → template.name 순 fallback
+	const model = modelName || template.authorLabel || template.name;
+
 	return {
 		'{{chatContent}}':  markdown,
 		'{{messageCount}}': String(messageCount),
-		'{{model}}':        template.authorLabel ?? template.name,
+		'{{model}}':        model,
+		'{{title}}':        title,
 		'{{titlePrefix}}':  template.titlePrefix ?? '',
 		'{{aiLabel}}':      template.authorLabel ?? '',
 		'{{siteEmoji}}':    template.emoji ?? '',
