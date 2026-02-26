@@ -64,6 +64,10 @@ export function detectUser(
 /**
  * 뷰포트 밖에 있는 메시지를 순서대로 스크롤하여 DOM 렌더링을 유도한다.
  * Google AI Studio처럼 가상 스크롤을 사용하는 사이트에서 필요하다.
+ *
+ * @deprecated extractAIChatContent() 내부에서 scrollAndExtract()로 대체됨.
+ *             CDK Virtual Scroll 환경에서는 스크롤 후 DOM 콘텐츠가 재활용되므로
+ *             이 함수 단독 사용 후 DOM을 재조회하면 빈 콘텐츠가 반환된다.
  */
 export async function scrollAllTurns(messageSelector: string): Promise<void> {
 	const turns = Array.from(document.querySelectorAll(messageSelector));
@@ -76,6 +80,88 @@ export async function scrollAllTurns(messageSelector: string): Promise<void> {
 		turns[0].scrollIntoView({ behavior: 'instant', block: 'start' });
 		await new Promise(r => setTimeout(r, 300));
 	}
+}
+
+/**
+ * 가상 스크롤 전용: 뷰포트 단위로 스크롤하면서 보이는 메시지를 즉시 추출한다.
+ *
+ * CDK Virtual Scroll은 화면 밖으로 스크롤된 요소의 DOM 콘텐츠를 재활용(recycle)하기
+ * 때문에, 스크롤 완료 후 DOM을 다시 조회하면 일부 메시지가 비어 있다.
+ * 이 함수는 각 뷰포트 위치에서 보이는 요소를 즉시 추출해 문제를 해결한다.
+ *
+ * 동작 방식:
+ *   1. 맨 위에서 시작 — 뷰포트 높이만큼 단계적으로 아래로 스크롤
+ *   2. 각 위치에서 현재 DOM에 렌더링된 메시지를 추출 (콘텐츠 기반 중복 제거)
+ *   3. 스크롤 위치가 변하지 않으면(하단 도달) 또는 연속 빈 스크롤이 3회이면 종료
+ *   4. 맨 위로 복귀
+ */
+async function scrollAndExtract(
+	siteConfig: SiteConfig
+): Promise<Array<{ isUser: boolean; content: string }>> {
+	// CDK virtual scroll 컨테이너 우선 탐지, 없으면 window 사용
+	const viewport = document.querySelector<HTMLElement>('cdk-virtual-scroll-viewport');
+
+	const getScrollTop = (): number =>
+		viewport ? viewport.scrollTop : window.scrollY;
+	const setScrollTop = (y: number): void => {
+		if (viewport) viewport.scrollTop = y;
+		else window.scrollTo(0, y);
+	};
+	const getViewportHeight = (): number =>
+		viewport ? viewport.clientHeight : window.innerHeight;
+
+	// 맨 위로 스크롤 후 렌더링 대기
+	setScrollTop(0);
+	await new Promise(r => setTimeout(r, 400));
+
+	const seenContent = new Set<string>();
+	const collected: Array<{ isUser: boolean; content: string }> = [];
+
+	let prevScrollTop = -1;
+	let consecutiveEmpty = 0;
+	let iterations = 0;
+	const MAX_ITERATIONS = 300; // 무한 루프 방지
+
+	while (consecutiveEmpty < 3 && iterations < MAX_ITERATIONS) {
+		iterations++;
+		const currentScrollTop = getScrollTop();
+
+		// 스크롤 위치가 변하지 않으면 하단 도달로 판단
+		if (currentScrollTop <= prevScrollTop && prevScrollTop !== -1) break;
+		prevScrollTop = currentScrollTop;
+
+		// 현재 뷰포트에 렌더링된 메시지 추출
+		const visibleMsgs = Array.from(
+			document.querySelectorAll<Element>(siteConfig.messageSelector)
+		);
+		let foundNew = false;
+
+		for (const msg of visibleMsgs) {
+			const contentEl = siteConfig.contentSelector
+				? (msg.querySelector(siteConfig.contentSelector) ?? msg)
+				: msg;
+			const content = convertAIChatToMarkdown(contentEl, siteConfig.ignoreSelector);
+			if (!content || seenContent.has(content)) continue;
+
+			seenContent.add(content);
+			const isUser = detectUser(msg, siteConfig.userAttribute, collected.length);
+			collected.push({ isUser, content });
+			foundNew = true;
+		}
+
+		if (foundNew) consecutiveEmpty = 0;
+		else consecutiveEmpty++;
+
+		// 다음 뷰포트 위치로 스크롤
+		setScrollTop(currentScrollTop + getViewportHeight());
+		await new Promise(r => setTimeout(r, 300));
+	}
+
+	// 맨 위로 복귀
+	setScrollTop(0);
+	await new Promise(r => setTimeout(r, 200));
+
+	return collected;
 }
 
 // ──────────────────────────────────────────────
@@ -275,36 +361,50 @@ export async function extractAIChatContent(
 	siteConfig: SiteConfig,
 	chatFormat: ChatFormat
 ): Promise<{ markdown: string; messageCount: number }> {
-	// 가상 스크롤 대응
+	let collected: Array<{ isUser: boolean; content: string }>;
+
 	if (siteConfig.scrollToLoad) {
-		await scrollAllTurns(siteConfig.messageSelector);
+		// 가상 스크롤(AI Studio): 뷰포트 단위로 스크롤하며 즉시 추출
+		// scrollAllTurns() 후 DOM 재조회 방식은 CDK Virtual Scroll에서
+		// 스크롤 후 콘텐츠가 재활용(recycle)되어 빈 결과를 반환하므로 사용하지 않는다.
+		collected = await scrollAndExtract(siteConfig);
+	} else {
+		// 일반 사이트: DOM 전체를 한 번에 조회 후 추출
+		const seenTexts = siteConfig.deduplicate ? new Set<string>() : null;
+		collected = [];
+
+		const messageEls = Array.from(document.querySelectorAll(siteConfig.messageSelector));
+		messageEls.forEach((msg, index) => {
+			const isUser = detectUser(msg, siteConfig.userAttribute, index);
+
+			// contentSelector가 있으면 해당 하위 요소만, 없으면 메시지 전체
+			const contentEl = siteConfig.contentSelector
+				? (msg.querySelector(siteConfig.contentSelector) ?? msg)
+				: msg;
+
+			const content = convertAIChatToMarkdown(contentEl, siteConfig.ignoreSelector);
+			if (!content) return;
+
+			// 중복 제거
+			if (seenTexts) {
+				if (seenTexts.has(content)) return;
+				seenTexts.add(content);
+			}
+
+			collected.push({ isUser, content });
+		});
 	}
 
-	const messageEls = Array.from(document.querySelectorAll(siteConfig.messageSelector));
-	const seenTexts = siteConfig.deduplicate ? new Set<string>() : null;
+	// 메시지가 없으면 빈 markdown 반환
+	if (collected.length === 0) {
+		return { markdown: '', messageCount: 0 };
+	}
 
+	// 수집된 메시지로 마크다운 조립
 	let prevIsUser: boolean | null = null;
-	let messageCount = 0;
 	let body = '';
 
-	messageEls.forEach((msg, index) => {
-		const isUser = detectUser(msg, siteConfig.userAttribute, index);
-
-		// contentSelector가 있으면 해당 하위 요소만, 없으면 메시지 전체
-		const contentEl = siteConfig.contentSelector
-			? (msg.querySelector(siteConfig.contentSelector) ?? msg)
-			: msg;
-
-		const content = convertAIChatToMarkdown(contentEl, siteConfig.ignoreSelector);
-		if (!content) return;
-
-		// 중복 제거
-		if (seenTexts) {
-			if (seenTexts.has(content)) return;
-			seenTexts.add(content);
-		}
-
-		// 구분자 삽입
+	for (const { isUser, content } of collected) {
 		if (prevIsUser !== null) {
 			// 사용자 → AI: turnSeparator (같은 Q&A 쌍 내부)
 			// AI → 사용자: qaSeparator (새 Q&A 세트 시작)
@@ -315,12 +415,6 @@ export async function extractAIChatContent(
 		const heading = isUser ? chatFormat.userTitleFormat : chatFormat.aiTitleFormat;
 		body += `${heading}\n\n${content}\n\n`;
 		prevIsUser = isUser;
-		messageCount++;
-	});
-
-	// 메시지가 없으면 빈 markdown 반환
-	if (messageCount === 0) {
-		return { markdown: '', messageCount: 0 };
 	}
 
 	// 전체 조립: 제목 → 첫 구분자 → 대화 본문 → 마지막 구분자
@@ -329,7 +423,7 @@ export async function extractAIChatContent(
 	md += body;
 	if (chatFormat.qaSeparator) md += `${chatFormat.qaSeparator}\n\n`;
 
-	return { markdown: md, messageCount };
+	return { markdown: md, messageCount: collected.length };
 }
 
 // ──────────────────────────────────────────────

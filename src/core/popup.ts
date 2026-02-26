@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 			if (tabs[0].id) {
 				try {
-					const extractedData = await extractPageContent(tabs[0].id);
+					let extractedData = await extractPageContent(tabs[0].id);
 					if (extractedData) {
 						// 템플릿 매칭을 먼저 수행해 siteConfig 유무를 파악한다
 						currentTemplate = findMatchingTemplate(currentUrl, templates, extractedData.schemaOrgData) || templates[0];
@@ -221,9 +221,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 						} else {
 							showError('Unable to initialize page content.');
 						}
-					} else {
-						showError('Unable to get page content. Try reloading the page.');
-					}
+} else {
+    let extractedData = { url: tabs[0].url, content: '<h1>Default Title</h1><p>No content extracted. Please reload if needed.</p>' };  // Fallback for general pages
+}
 				} catch (error: unknown) {
 					console.error('Error in popup initialization:', error);
 					if (error instanceof Error) {
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 			const tabs = await chrome.tabs.query({active: true, currentWindow: true});
 			if (tabs[0]?.id) {
 				try {
-					const extractedData = await extractPageContent(tabs[0].id);
+					let extractedData = await extractPageContent(tabs[0].id);
 					if (extractedData) {
 						// AI chat 템플릿이면 대화 추출
 						let extraVariables: Record<string, string> | undefined;

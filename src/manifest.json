@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "JnJ JnJ Obsidian Clipper",
+	"name": "JnJ Obsidian Clipper",
 	"version": "0.1.0",
 	"description": "Official web clipper extension for Obsidian. Clip content and save it to your Obsidian vault so you always have access to it, even offline.",
 	"permissions": [
