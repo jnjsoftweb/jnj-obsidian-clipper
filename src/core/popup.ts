@@ -50,6 +50,23 @@ function logError(message: string, error?: any): void {
   showError(message);
 }
 
+function showInfo(message: string): void {
+	const errorMessage = document.querySelector('.error-message') as HTMLElement;
+	const clipper = document.querySelector('.clipper') as HTMLElement;
+
+	if (errorMessage && clipper) {
+		errorMessage.textContent = message;
+		errorMessage.style.display = 'block';
+		errorMessage.style.color = 'var(--interactive-accent, #7C3AED)';
+		clipper.style.display = 'none';
+
+		const settingsIcon = document.getElementById('open-settings') as HTMLElement;
+		if (settingsIcon) {
+			settingsIcon.style.display = 'flex';
+		}
+	}
+}
+
 async function handleClip() {
 	if (!currentTemplate) return;
 
@@ -68,18 +85,68 @@ async function handleClip() {
 	const noteName = noteNameField.value;
 	const path = pathField.value;
 
+	console.log('[handleClip] vault:', selectedVault || '(없음)', '| path:', path, '| noteName:', noteName, '| contentLength:', noteContent.length);
+
+	if (!noteName || noteName.trim() === '') {
+		showError('노트 이름이 비어 있습니다. 페이지를 다시 로드하거나 직접 입력해 주세요.');
+		return;
+	}
+
+	if (!selectedVault) {
+		showError('Obsidian vault가 설정되지 않았습니다. 설정 페이지(⚙)에서 vault 이름을 추가해 주세요.');
+		return;
+	}
+
 	const properties = Array.from(document.querySelectorAll('.metadata-property input')).map(input => ({
 		name: input.id,
 		value: (input as HTMLInputElement).value,
 		type: input.getAttribute('data-type') || 'text'
 	}));
 
+	let frontmatter = '';
 	let fileContent: string;
 	if (currentTemplate.behavior === 'create') {
-		const frontmatter = await generateFrontmatter(properties as Property[]);
+		frontmatter = await generateFrontmatter(properties as Property[]);
 		fileContent = frontmatter + noteContent;
 	} else {
 		fileContent = noteContent;
+	}
+
+	console.log('[handleClip] fileContent 길이(frontmatter 포함):', fileContent.length);
+
+	// URL 길이 체크 — Windows 프로토콜 핸들러 명령줄 한계(~32,767자)를 초과하면
+	// Obsidian이 URL을 받지 못하거나 멀티바이트 인코딩 중간에서 잘려 파일 생성에 실패한다.
+	// 20,000자를 초과할 경우 전체 내용을 클립보드에 복사하고 최소 노트만 생성한다.
+	const SAFE_URL_LENGTH = 20000;
+	const pathNormalized = path.endsWith('/') ? path : path + '/';
+	const estimatedUrlLength =
+		`obsidian://new?file=${encodeURIComponent(pathNormalized + noteName)}&vault=${encodeURIComponent(selectedVault)}&content=`.length
+		+ encodeURIComponent(fileContent).length;
+
+	if (estimatedUrlLength > SAFE_URL_LENGTH) {
+		console.log('[handleClip] 예상 URL 길이:', estimatedUrlLength, '> ', SAFE_URL_LENGTH, '→ 클립보드 폴백 사용');
+
+		try {
+			await navigator.clipboard.writeText(fileContent);
+			console.log('[handleClip] 클립보드 복사 완료 (길이:', fileContent.length, ')');
+		} catch (e) {
+			console.warn('[handleClip] 클립보드 복사 실패:', e);
+		}
+
+		const clipNotice = '\n> [!info] 전체 내용이 클립보드에 복사되었습니다. 이 아래에 붙여넣기(Ctrl+V) 하세요.\n';
+		const minimalContent = currentTemplate.behavior === 'create'
+			? frontmatter + clipNotice
+			: clipNotice;
+
+		try {
+			await saveToObsidian(minimalContent, noteName, path, selectedVault, currentTemplate.behavior, currentTemplate.specificNoteName, currentTemplate.dailyNoteFormat);
+			showInfo('내용이 길어 클립보드에 복사되었습니다. Obsidian 노트에서 Ctrl+V로 붙여넣기 하세요.');
+			setTimeout(() => window.close(), 3000);
+		} catch (error) {
+			console.error('[handleClip] Obsidian 저장 실패:', error);
+			showError('Obsidian 저장에 실패했습니다. 다시 시도해 주세요.');
+		}
+		return;
 	}
 
 	try {

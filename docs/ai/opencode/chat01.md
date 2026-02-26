@@ -16,3 +16,6 @@ C:\JnJ-soft\Projects\@chrome-extension\jnj-obsidian-clipper\docs\src-structure.m
 """
 다른 ai-web-chat 페이지들은 obsidian 에 저장이 잘 되는데, google ai studio(스크롤 기능 사용) 은 저장 버튼을 클릭했을 때, 에러도 없이 어디에 저장되었지 알 수가 없어요.
 """
+
+====================
+
