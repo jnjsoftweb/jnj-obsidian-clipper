@@ -1,10 +1,12 @@
 export interface GeneralSettings {
 	showMoreActionsButton: boolean;
+	user: string;
 	vaults: string[];
 }
 
 export let generalSettings: GeneralSettings = {
 	showMoreActionsButton: true,
+	user: 'ilinkrun@gmail.com',
 	vaults: []
 };
 
@@ -29,6 +31,7 @@ export async function loadGeneralSettings(): Promise<GeneralSettings> {
 
 	generalSettings = {
 		showMoreActionsButton: data.general_settings?.showMoreActionsButton ?? true,
+		user: data.general_settings?.user ?? 'ilinkrun@gmail.com',
 		vaults: data.vaults || []
 	};
 	
@@ -38,8 +41,11 @@ export async function loadGeneralSettings(): Promise<GeneralSettings> {
 export async function saveGeneralSettings(settings?: Partial<GeneralSettings>): Promise<void> {
 	generalSettings = { ...generalSettings, ...settings };
 	
-	await chrome.storage.sync.set({ 
-		general_settings: { showMoreActionsButton: generalSettings.showMoreActionsButton },
-		vaults: generalSettings.vaults 
+	await chrome.storage.sync.set({
+		general_settings: {
+			showMoreActionsButton: generalSettings.showMoreActionsButton,
+			user: generalSettings.user
+		},
+		vaults: generalSettings.vaults
 	});
 }

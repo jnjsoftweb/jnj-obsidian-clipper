@@ -26,7 +26,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			{ id: 'p-chatgpt-created', name: 'createdAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-chatgpt-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-chatgpt-tags', name: 'tags', value: 'ai-chat, chatgpt', type: 'multitext' },
-			{ id: 'p-chatgpt-desc', name: 'description', value: '{{title}}', type: 'text' }
+			{ id: 'p-chatgpt-desc', name: 'description', value: '{{title}}', type: 'text' },
+			{ id: 'p-chatgpt-user', name: 'user', value: '{{user}}', type: 'text' }
 		],
 		triggers: ['https://chatgpt.com/'],
 		siteConfig: {
@@ -36,10 +37,10 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
 		},
 		chatFormat: {
-			userTitleFormat: '### 👤 사용자 (User)',
-			aiTitleFormat: '### 🤖 챗GPT (ChatGPT)',
-			turnSeparator: '',
-			qaSeparator: '---'
+			userTitleFormat: '> 👤 사용자 (User)',
+			aiTitleFormat: '> 🤖 챗GPT (ChatGPT)',
+			turnSeparator: '===',
+			qaSeparator: '============'
 		}
 	},
 	{
@@ -60,7 +61,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			{ id: 'p-claude-created', name: 'createdAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-claude-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-claude-tags', name: 'tags', value: 'ai-chat, claude', type: 'multitext' },
-			{ id: 'p-claude-desc', name: 'description', value: '{{title}}', type: 'text' }
+			{ id: 'p-claude-desc', name: 'description', value: '{{title}}', type: 'text' },
+			{ id: 'p-claude-user', name: 'user', value: '{{user}}', type: 'text' }
 		],
 		triggers: ['https://claude.ai/'],
 		siteConfig: {
@@ -70,10 +72,10 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
 		},
 		chatFormat: {
-			userTitleFormat: '### 👤 사용자 (User)',
-			aiTitleFormat: '### 🧠 클로드 (Claude)',
-			turnSeparator: '',
-			qaSeparator: '---'
+			userTitleFormat: '> 👤 사용자 (User)',
+			aiTitleFormat: '> 🧠 클로드 (Claude)',
+			turnSeparator: '===',
+			qaSeparator: '============'
 		}
 	},
 	{
@@ -94,7 +96,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			{ id: 'p-gemini-created', name: 'createdAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-gemini-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-gemini-tags', name: 'tags', value: 'ai-chat, gemini', type: 'multitext' },
-			{ id: 'p-gemini-desc', name: 'description', value: '{{title}}', type: 'text' }
+			{ id: 'p-gemini-desc', name: 'description', value: '{{title}}', type: 'text' },
+			{ id: 'p-gemini-user', name: 'user', value: '{{user}}', type: 'text' }
 		],
 		triggers: ['https://gemini.google.com/'],
 		siteConfig: {
@@ -104,10 +107,10 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
 		},
 		chatFormat: {
-			userTitleFormat: '### 👤 사용자 (User)',
-			aiTitleFormat: '### ✨ 제미나이 (Gemini)',
-			turnSeparator: '',
-			qaSeparator: '---'
+			userTitleFormat: '> 👤 사용자 (User)',
+			aiTitleFormat: '> ✨ 제미나이 (Gemini)',
+			turnSeparator: '===',
+			qaSeparator: '============'
 		}
 	},
 	{
@@ -128,7 +131,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			{ id: 'p-aistudio-created', name: 'createdAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-aistudio-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-aistudio-tags', name: 'tags', value: 'ai-chat, ai-studio', type: 'multitext' },
-			{ id: 'p-aistudio-desc', name: 'description', value: '{{title}}', type: 'text' }
+			{ id: 'p-aistudio-desc', name: 'description', value: '{{title}}', type: 'text' },
+			{ id: 'p-aistudio-user', name: 'user', value: '{{user}}', type: 'text' }
 		],
 		triggers: ['https://aistudio.google.com/'],
 		siteConfig: {
@@ -141,10 +145,10 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			modelSelector: '.chat-turn-container.model .author-label'
 		},
 		chatFormat: {
-			userTitleFormat: '### 👤 사용자 (User)',
-			aiTitleFormat: '### ⚙️ 모델 (Model)',
-			turnSeparator: '',
-			qaSeparator: '---'
+			userTitleFormat: '> 👤 사용자 (User)',
+			aiTitleFormat: '> ⚙️ 모델 (Model)',
+			turnSeparator: '===',
+			qaSeparator: '============'
 		}
 	},
 	{
@@ -165,7 +169,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			{ id: 'p-genspark-created', name: 'createdAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-genspark-published', name: 'publishedAt', value: '{{date}}', type: 'date' },
 			{ id: 'p-genspark-tags', name: 'tags', value: 'ai-chat, genspark', type: 'multitext' },
-			{ id: 'p-genspark-desc', name: 'description', value: '{{title}}', type: 'text' }
+			{ id: 'p-genspark-desc', name: 'description', value: '{{title}}', type: 'text' },
+			{ id: 'p-genspark-user', name: 'user', value: '{{user}}', type: 'text' }
 		],
 		triggers: ['https://www.genspark.ai/'],
 		siteConfig: {
@@ -176,10 +181,10 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			deduplicate: true
 		},
 		chatFormat: {
-			userTitleFormat: '### 👤 사용자 (User)',
-			aiTitleFormat: '### ✨ 젠스파크 (Genspark)',
-			turnSeparator: '',
-			qaSeparator: '---'
+			userTitleFormat: '> 👤 사용자 (User)',
+			aiTitleFormat: '> ✨ 젠스파크 (Genspark)',
+			turnSeparator: '===',
+			qaSeparator: '============'
 		}
 	}
 ];

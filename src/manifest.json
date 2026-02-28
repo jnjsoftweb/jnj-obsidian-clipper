@@ -5,6 +5,7 @@
 	"description": "Official web clipper extension for Obsidian. Clip content and save it to your Obsidian vault so you always have access to it, even offline.",
 	"permissions": [
 		"activeTab",
+		"scripting",
 		"tabs",
 		"storage",
 		"commands"

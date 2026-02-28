@@ -53,6 +53,7 @@ export function initializeGeneralSettings(): void {
 	loadGeneralSettings().then(() => {
 		updateVaultList();
 		initializeShowMoreActionsToggle();
+		initializeUserInput();
 		initializeVaultInput();
 		initializeKeyboardShortcuts();
 		initializeToggles();
@@ -65,6 +66,16 @@ function initializeShowMoreActionsToggle(): void {
 		ShowMoreActionsToggle.checked = generalSettings.showMoreActionsButton;
 		ShowMoreActionsToggle.addEventListener('change', () => {
 			saveGeneralSettings({ showMoreActionsButton: ShowMoreActionsToggle.checked });
+		});
+	}
+}
+
+function initializeUserInput(): void {
+	const userInput = document.getElementById('user-input') as HTMLInputElement;
+	if (userInput) {
+		userInput.value = generalSettings.user;
+		userInput.addEventListener('change', () => {
+			saveGeneralSettings({ user: userInput.value.trim() });
 		});
 	}
 }

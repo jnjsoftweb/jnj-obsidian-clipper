@@ -3,6 +3,7 @@ import { SiteConfig, ChatFormat } from '../types/site-config';
 import { extractReadabilityContent, createMarkdownContent } from './markdown-converter';
 import { sanitizeFileName } from './obsidian-note-creator';
 import { applyFilters } from './filters';
+import { generalSettings } from './storage-utils';
 import dayjs from 'dayjs';
 
 async function processVariable(match: string, variables: { [key: string]: string }, currentUrl: string): Promise<string> {
@@ -90,6 +91,25 @@ export async function replaceVariables(tabId: number, text: string, variables: {
 	return text;
 }
 
+function parsePageContentResponse(response: any): {
+	content: string;
+	selectedHtml: string;
+	extractedContent: ExtractedContent;
+	schemaOrgData: any;
+	fullHtml: string;
+} | null {
+	if (response && response.content) {
+		return {
+			content: response.content,
+			selectedHtml: response.selectedHtml,
+			extractedContent: response.extractedContent,
+			schemaOrgData: response.schemaOrgData,
+			fullHtml: response.fullHtml
+		};
+	}
+	return null;
+}
+
 export async function extractPageContent(tabId: number): Promise<{
 	content: string;
 	selectedHtml: string;
@@ -100,21 +120,36 @@ export async function extractPageContent(tabId: number): Promise<{
 	return new Promise((resolve) => {
 		chrome.tabs.sendMessage(tabId, { action: "getPageContent" }, function(response) {
 			if (chrome.runtime.lastError) {
-				console.error('getPageContent 오류:', chrome.runtime.lastError.message);
-				resolve(null);
+				const errorMsg = chrome.runtime.lastError.message || '';
+				console.error('getPageContent 오류:', errorMsg);
+
+				// content script가 없으면 programmatically inject 후 재시도
+				if (errorMsg.includes('Could not establish connection') || errorMsg.includes('Receiving end does not exist')) {
+					console.log('[extractPageContent] content script 재주입 시도...');
+					chrome.scripting.executeScript(
+						{ target: { tabId }, files: ['content.js'] },
+						() => {
+							if (chrome.runtime.lastError) {
+								console.error('[extractPageContent] content script 주입 실패:', chrome.runtime.lastError.message);
+								resolve(null);
+								return;
+							}
+							chrome.tabs.sendMessage(tabId, { action: "getPageContent" }, function(retryResponse) {
+								if (chrome.runtime.lastError) {
+									console.error('[extractPageContent] 재시도 실패:', chrome.runtime.lastError.message);
+									resolve(null);
+									return;
+								}
+								resolve(parsePageContentResponse(retryResponse));
+							});
+						}
+					);
+				} else {
+					resolve(null);
+				}
 				return;
 			}
-			if (response && response.content) {
-				resolve({
-					content: response.content,
-					selectedHtml: response.selectedHtml,
-					extractedContent: response.extractedContent,
-					schemaOrgData: response.schemaOrgData,
-					fullHtml: response.fullHtml
-				});
-			} else {
-				resolve(null);
-			}
+			resolve(parsePageContentResponse(response));
 		});
 	});
 }
@@ -270,7 +305,8 @@ export async function initializePageContent(
 		'{{published}}': published,
 		'{{site}}': site,
 		'{{title}}': title,
-		'{{url}}': currentUrl
+		'{{url}}': currentUrl,
+		'{{user}}': generalSettings.user || ''
 	};
 
 	// Add extracted content to variables
