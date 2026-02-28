@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { Template, Property } from '../types/types';
 import { generateFrontmatter, saveToObsidian, sanitizeFileName } from '../utils/obsidian-note-creator';
 import { extractPageContent, initializePageContent, replaceVariables, sendExtractAIChat } from '../utils/content-extractor';
-import { buildAIChatVariables } from '../utils/ai-chat-extractor';
+import { buildAIChatVariables, formatQASession } from '../utils/ai-chat-extractor';
 import { initializeIcons, getPropertyTypeIcon } from '../icons/icons';
 import { decompressFromUTF16 } from 'lz-string';
 import { findMatchingTemplate, matchPattern } from '../utils/triggers';
@@ -263,8 +263,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 								if (chatResult.messageCount === 0) {
 									console.warn('[AI Chat] 메시지를 찾을 수 없습니다. 대화 페이지인지 확인하세요. (URL:', currentUrl, ')');
 								}
+								const markdown = formatQASession(
+									chatResult.session,
+									currentTemplate.chatFormat,
+									chatResult.pageTitle
+								);
 								extraVariables = buildAIChatVariables(
-									chatResult.markdown,
+									markdown,
 									chatResult.messageCount,
 									currentTemplate,
 									chatResult.modelName
@@ -274,6 +279,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 							}
 						}
 
+
+						// template.model이 설정된 경우 {{model}} 변수로 주입 (AI Chat은 DOM 추출값보다 우선)
+						if (currentTemplate.model) {
+							extraVariables = extraVariables ?? {};
+							extraVariables['{{model}}'] = currentTemplate.model;
+						}
 						const initializedContent = await initializePageContent(
 							extractedData.content,
 							extractedData.selectedHtml,
@@ -366,8 +377,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 								if (chatResult.messageCount === 0) {
 									console.warn('[AI Chat] 메시지를 찾을 수 없습니다. 대화 페이지인지 확인하세요.');
 								}
+								const markdown = formatQASession(
+									chatResult.session,
+									currentTemplate.chatFormat!,
+									chatResult.pageTitle
+								);
 								extraVariables = buildAIChatVariables(
-									chatResult.markdown,
+									markdown,
 									chatResult.messageCount,
 									currentTemplate,
 									chatResult.modelName
@@ -377,6 +393,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 							}
 						}
 
+
+						// template.model이 설정된 경우 {{model}} 변수로 주입 (AI Chat은 DOM 추출값보다 우선)
+						if (currentTemplate.model) {
+							extraVariables = extraVariables ?? {};
+							extraVariables['{{model}}'] = currentTemplate.model;
+						}
 						const initializedContent = await initializePageContent(
 							extractedData.content,
 							extractedData.selectedHtml,

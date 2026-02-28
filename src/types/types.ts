@@ -12,6 +12,8 @@ export interface Template {
 	specificNoteName?: string;
 	dailyNoteFormat?: string;
 	vault?: string;
+	// 모든 템플릿에서 {{model}} 변수로 참조할 모델명 (선택적)
+	model?: string;
 	// AI chat 전용 필드 (선택적 — 값이 있으면 AI chat 템플릿으로 동작)
 	siteConfig?: SiteConfig;
 	chatFormat?: ChatFormat;

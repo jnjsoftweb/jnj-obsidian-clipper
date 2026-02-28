@@ -1,4 +1,5 @@
 import { Template } from '../types/types';
+import { PostProcessRule } from '../types/site-config';
 
 /**
  * 기본 AI Chat 템플릿 5개 (ChatGPT, Claude, Gemini, Google AI Studio, Genspark).
@@ -6,7 +7,28 @@ import { Template } from '../types/types';
  *
  * ID는 고정 문자열 사용 — 재설치 후에도 중복 생성 방지를 위해
  * loadTemplates()에서 기존 template_list 유무를 확인한다.
+ *
+ * 추출 방식:
+ *   - ChatGPT / Claude / Gemini / Google AI Studio → extractionConfig (신규 구조적 추출)
+ *   - Genspark → messageSelector + userAttribute (레거시 — DOM 구조 불명확)
  */
+
+/** 모든 AI chat 템플릿에 공통 적용되는 마크다운 사후 보정 규칙 */
+const COMMON_POST_PROCESS_RULES: PostProcessRule[] = [
+	{
+		label: '줄 끝 공백 제거',
+		pattern: '\\s+$',
+		flags: 'gm',
+		replacement: ''
+	},
+	{
+		label: '리스트 아이템 사이 빈 줄 제거',
+		pattern: '(- [^\\n]+)\\n{2,}(?=-)',
+		flags: 'gm',
+		replacement: '$1\n'
+	}
+];
+
 export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 	{
 		id: 'default-ai-chatgpt',
@@ -32,15 +54,18 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		triggers: ['https://chatgpt.com/'],
 		siteConfig: {
 			hostname: 'chatgpt.com',
-			messageSelector: "[data-message-author-role]",
-			userAttribute: { attr: 'data-message-author-role', value: 'user' },
-			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
+			extractionConfig: {
+				userMessageSelector: "[data-message-author-role='user']",
+				modelMessageSelectors: ["[data-message-author-role='assistant']"],
+				ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
+			}
 		},
 		chatFormat: {
 			userTitleFormat: '> 👤 사용자 (User)',
 			aiTitleFormat: '> 🤖 챗GPT (ChatGPT)',
 			turnSeparator: '===',
-			qaSeparator: '============'
+			qaSeparator: '============',
+			postProcessRules: COMMON_POST_PROCESS_RULES
 		}
 	},
 	{
@@ -67,15 +92,18 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		triggers: ['https://claude.ai/'],
 		siteConfig: {
 			hostname: 'claude.ai',
-			messageSelector: "[data-testid='user-message'], .font-claude-message, .font-claude-response",
-			userAttribute: { attr: 'data-testid', value: 'user-message' },
-			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
+			extractionConfig: {
+				userMessageSelector: "[data-testid='user-message']",
+				modelMessageSelectors: [".font-claude-message", ".font-claude-response"],
+				ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
+			}
 		},
 		chatFormat: {
 			userTitleFormat: '> 👤 사용자 (User)',
 			aiTitleFormat: '> 🧠 클로드 (Claude)',
 			turnSeparator: '===',
-			qaSeparator: '============'
+			qaSeparator: '============',
+			postProcessRules: COMMON_POST_PROCESS_RULES
 		}
 	},
 	{
@@ -102,15 +130,18 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		triggers: ['https://gemini.google.com/'],
 		siteConfig: {
 			hostname: 'gemini.google.com',
-			messageSelector: 'user-query, model-response',
-			userAttribute: { tag: 'user-query' },
-			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
+			extractionConfig: {
+				userMessageSelector: 'user-query',
+				modelMessageSelectors: ['model-response'],
+				ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only"
+			}
 		},
 		chatFormat: {
 			userTitleFormat: '> 👤 사용자 (User)',
 			aiTitleFormat: '> ✨ 제미나이 (Gemini)',
 			turnSeparator: '===',
-			qaSeparator: '============'
+			qaSeparator: '============',
+			postProcessRules: COMMON_POST_PROCESS_RULES
 		}
 	},
 	{
@@ -137,18 +168,20 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		triggers: ['https://aistudio.google.com/'],
 		siteConfig: {
 			hostname: 'aistudio.google.com',
-			messageSelector: 'ms-chat-turn',
-			userAttribute: { containerSelector: '.chat-turn-container', userClass: ['user'], aiClass: ['model'] },
-			contentSelector: '.turn-content',
-			ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only, .actions-container, .author-label, ms-thought-chunk",
 			scrollToLoad: true,
-			modelSelector: '.chat-turn-container.model .author-label'
+			extractionConfig: {
+				userMessageSelector: 'ms-chat-turn .chat-turn-container.user .turn-content',
+				modelMessageSelectors: ['ms-chat-turn .chat-turn-container.model .turn-content'],
+				ignoreSelector: "button, svg, img, [aria-hidden='true'], .sr-only, .actions-container, .author-label, ms-thought-chunk",
+				modelSelector: '.chat-turn-container.model .author-label'
+			}
 		},
 		chatFormat: {
 			userTitleFormat: '> 👤 사용자 (User)',
 			aiTitleFormat: '> ⚙️ 모델 (Model)',
 			turnSeparator: '===',
-			qaSeparator: '============'
+			qaSeparator: '============',
+			postProcessRules: COMMON_POST_PROCESS_RULES
 		}
 	},
 	{
@@ -174,6 +207,7 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 		],
 		triggers: ['https://www.genspark.ai/'],
 		siteConfig: {
+			// Genspark은 DOM 구조 특성상 레거시 htmlMatch 방식 유지
 			hostname: 'www.genspark.ai',
 			messageSelector: "article, [class*='message'], [class*='chat-turn'], [class*='bubble']",
 			userAttribute: { htmlMatch: ['user', 'query', 'human'] },
@@ -184,7 +218,8 @@ export const DEFAULT_AI_CHAT_TEMPLATES: Template[] = [
 			userTitleFormat: '> 👤 사용자 (User)',
 			aiTitleFormat: '> ✨ 젠스파크 (Genspark)',
 			turnSeparator: '===',
-			qaSeparator: '============'
+			qaSeparator: '============',
+			postProcessRules: COMMON_POST_PROCESS_RULES
 		}
 	}
 ];

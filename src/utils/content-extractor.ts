@@ -1,5 +1,5 @@
 import { ExtractedContent } from '../types/types';
-import { SiteConfig, ChatFormat } from '../types/site-config';
+import { SiteConfig, ChatFormat, QASession } from '../types/site-config';
 import { extractReadabilityContent, createMarkdownContent } from './markdown-converter';
 import { sanitizeFileName } from './obsidian-note-creator';
 import { applyFilters } from './filters';
@@ -169,7 +169,7 @@ export async function sendExtractAIChat(
 	tabId: number,
 	siteConfig: SiteConfig,
 	chatFormat: ChatFormat
-): Promise<{ markdown: string; messageCount: number; modelName: string } | null> {
+): Promise<{ session: QASession; messageCount: number; modelName: string; pageTitle: string } | null> {
 	return new Promise((resolve) => {
 		chrome.tabs.sendMessage(
 			tabId,
@@ -182,7 +182,7 @@ export async function sendExtractAIChat(
 					);
 					resolve(null);
 				} else {
-					resolve(response as { markdown: string; messageCount: number; modelName: string });
+					resolve(response as { session: QASession; messageCount: number; modelName: string; pageTitle: string });
 				}
 			}
 		);

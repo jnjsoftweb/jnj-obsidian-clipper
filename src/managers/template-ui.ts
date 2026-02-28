@@ -1,5 +1,5 @@
 import { Template, Property } from '../types/types';
-import { SiteConfig, ChatFormat, UserAttribute } from '../types/site-config';
+import { SiteConfig, ChatFormat, UserAttribute, ExtractionConfig, PostProcessRule } from '../types/site-config';
 import { templates, editingTemplateIndex, saveTemplateSettings, getTemplates, setEditingTemplateIndex } from './template-manager';
 import { initializeIcons, getPropertyTypeIcon } from '../icons/icons';
 import { escapeValue, escapeHtml, unescapeValue } from '../utils/string-utils';
@@ -117,6 +117,9 @@ export function showTemplateEditor(template: Template | null): void {
 	const noteContentFormat = document.getElementById('note-content-format') as HTMLTextAreaElement;
 	if (noteContentFormat) noteContentFormat.value = editingTemplate.noteContentFormat || '';
 
+	const templateModelInput = document.getElementById('template-model') as HTMLInputElement;
+	if (templateModelInput) templateModelInput.value = editingTemplate.model ?? '';
+
 	updateBehaviorFields();
 
 	if (behaviorSelect) {
@@ -183,6 +186,17 @@ export function showTemplateEditor(template: Template | null): void {
 	}
 
 	populateAIChatFields(editingTemplate);
+
+	// postProcessRules 추가 버튼 이벤트
+	const addRuleBtn = document.getElementById('add-post-process-rule-btn');
+	if (addRuleBtn) {
+		const newRuleBtn = addRuleBtn.cloneNode(true) as HTMLElement;
+		addRuleBtn.replaceWith(newRuleBtn);
+		newRuleBtn.addEventListener('click', () => {
+			const rulesContainer = document.getElementById('post-process-rules-list');
+			if (rulesContainer) addPostProcessRuleRow(rulesContainer);
+		});
+	}
 
 	// userAttribute 판별 방식 변경 시 동적 필드 재렌더링
 	const userAttrTypeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
@@ -362,6 +376,9 @@ export function updateTemplateFromForm(): void {
 	const noteContentFormat = document.getElementById('note-content-format') as HTMLTextAreaElement;
 	if (noteContentFormat) template.noteContentFormat = noteContentFormat.value;
 
+	const templateModelInput = document.getElementById('template-model') as HTMLInputElement;
+	template.model = templateModelInput?.value.trim() || undefined;
+
 	const propertyElements = document.querySelectorAll('#template-properties .property-editor');
 	template.properties = Array.from(propertyElements).map(prop => {
 		const nameInput = prop.querySelector('.property-name') as HTMLInputElement;
@@ -450,15 +467,17 @@ function populateAIChatFields(template: Template): void {
 		if (deduplicateCheckbox) deduplicateCheckbox.checked = sc.deduplicate ?? false;
 		if (scrollToLoadCheckbox) scrollToLoadCheckbox.checked = sc.scrollToLoad ?? false;
 
-		// userAttribute 판별 방식 결정
-		let attrType = 'attr';
-		if ('tag' in sc.userAttribute) attrType = 'tag';
-		else if ('containerSelector' in sc.userAttribute) attrType = 'containerSelector';
-		else if ('htmlMatch' in sc.userAttribute) attrType = 'htmlMatch';
+		// userAttribute 판별 방식 결정 (레거시 필드가 있을 때만 처리)
+		if (sc.userAttribute) {
+			let attrType = 'attr';
+			if ('tag' in sc.userAttribute) attrType = 'tag';
+			else if ('containerSelector' in sc.userAttribute) attrType = 'containerSelector';
+			else if ('htmlMatch' in sc.userAttribute) attrType = 'htmlMatch';
 
-		const typeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
-		if (typeSelect) typeSelect.value = attrType;
-		renderUserAttrFields(sc.userAttribute);
+			const typeSelect = document.getElementById('chat-user-attr-type') as HTMLSelectElement;
+			if (typeSelect) typeSelect.value = attrType;
+			renderUserAttrFields(sc.userAttribute);
+		}
 	} else {
 		if (hostnameInput) hostnameInput.value = '';
 		if (messageSelectorInput) messageSelectorInput.value = '';
@@ -472,6 +491,21 @@ function populateAIChatFields(template: Template): void {
 		renderUserAttrFields();
 	}
 
+	// ExtractionConfig fields
+	const rootSelectorInput = document.getElementById('chat-root-selector') as HTMLInputElement;
+	const userMsgSelectorInput = document.getElementById('chat-user-message-selector') as HTMLInputElement;
+	const modelMsgSelectorsTA = document.getElementById('chat-model-message-selectors') as HTMLTextAreaElement;
+	const extractionIgnoreInput = document.getElementById('chat-extraction-ignore-selector') as HTMLInputElement;
+	const extractionModelSelectorInput = document.getElementById('chat-extraction-model-selector') as HTMLInputElement;
+	const extractionDeduplicateCheckbox = document.getElementById('chat-extraction-deduplicate') as HTMLInputElement;
+	const ec = sc?.extractionConfig;
+	if (rootSelectorInput) rootSelectorInput.value = ec?.rootSelector ?? '';
+	if (userMsgSelectorInput) userMsgSelectorInput.value = ec?.userMessageSelector ?? '';
+	if (modelMsgSelectorsTA) modelMsgSelectorsTA.value = (ec?.modelMessageSelectors ?? []).join('\n');
+	if (extractionIgnoreInput) extractionIgnoreInput.value = ec?.ignoreSelector ?? '';
+	if (extractionModelSelectorInput) extractionModelSelectorInput.value = ec?.modelSelector ?? '';
+	if (extractionDeduplicateCheckbox) extractionDeduplicateCheckbox.checked = ec?.deduplicate ?? false;
+
 	if (cf) {
 		const userTitleInput = document.getElementById('chat-user-title') as HTMLInputElement;
 		const aiTitleInput = document.getElementById('chat-ai-title') as HTMLInputElement;
@@ -481,6 +515,10 @@ function populateAIChatFields(template: Template): void {
 		if (aiTitleInput) aiTitleInput.value = cf.aiTitleFormat ?? '';
 		if (turnSepInput) turnSepInput.value = cf.turnSeparator ?? '';
 		if (qaSepInput) qaSepInput.value = cf.qaSeparator ?? '';
+
+		const includeTitleCheckbox = document.getElementById('chat-include-title') as HTMLInputElement;
+		if (includeTitleCheckbox) includeTitleCheckbox.checked = cf.includeTitle ?? true;
+		renderPostProcessRules(cf.postProcessRules);
 	} else {
 		const userTitleInput = document.getElementById('chat-user-title') as HTMLInputElement;
 		const aiTitleInput = document.getElementById('chat-ai-title') as HTMLInputElement;
@@ -490,9 +528,55 @@ function populateAIChatFields(template: Template): void {
 		if (aiTitleInput) aiTitleInput.value = '';
 		if (turnSepInput) turnSepInput.value = '';
 		if (qaSepInput) qaSepInput.value = '';
+
+		const includeTitleCbElse = document.getElementById('chat-include-title') as HTMLInputElement;
+		if (includeTitleCbElse) includeTitleCbElse.checked = true;
+		renderPostProcessRules([]);
 	}
 }
 
+function renderPostProcessRules(rules?: PostProcessRule[]): void {
+	const container = document.getElementById('post-process-rules-list');
+	if (!container) return;
+	container.innerHTML = '';
+	(rules ?? []).forEach(rule => addPostProcessRuleRow(container, rule));
+}
+
+function addPostProcessRuleRow(container: HTMLElement, rule?: PostProcessRule): void {
+	const row = document.createElement('div');
+	row.className = 'post-process-rule-row';
+	row.innerHTML = `
+		<input type="text" class="rule-label" placeholder="설명 (선택)" value="${escapeHtml(rule?.label ?? '')}" />
+		<input type="text" class="rule-pattern" placeholder="패턴 (regex)" value="${escapeHtml(rule?.pattern ?? '')}" />
+		<input type="text" class="rule-flags" placeholder="플래그 (예: gm)" value="${escapeHtml(rule?.flags ?? 'gm')}" />
+		<input type="text" class="rule-replacement" placeholder="치환 문자열" value="${escapeHtml(rule?.replacement ?? '')}" />
+		<button type="button" class="remove-rule-btn clickable-icon" aria-label="규칙 제거"><i data-lucide="trash-2"></i></button>
+	`;
+	const removeBtn = row.querySelector('.remove-rule-btn');
+	if (removeBtn) {
+		removeBtn.addEventListener('click', () => container.removeChild(row));
+	}
+	container.appendChild(row);
+	initializeIcons(row);
+}
+
+function readPostProcessRules(): PostProcessRule[] {
+	const container = document.getElementById('post-process-rules-list');
+	if (!container) return [];
+	const rules: PostProcessRule[] = [];
+	container.querySelectorAll('.post-process-rule-row').forEach(row => {
+		const label = (row.querySelector('.rule-label') as HTMLInputElement)?.value.trim();
+		const pattern = (row.querySelector('.rule-pattern') as HTMLInputElement)?.value.trim();
+		const flags = (row.querySelector('.rule-flags') as HTMLInputElement)?.value.trim();
+		const replacement = (row.querySelector('.rule-replacement') as HTMLInputElement)?.value ?? '';
+		if (pattern) {
+			const r: PostProcessRule = { pattern, flags: flags || 'g', replacement };
+			if (label) r.label = label;
+			rules.push(r);
+		}
+	});
+	return rules;
+}
 function renderUserAttrFields(existingAttr?: UserAttribute): void {
 	const container = document.getElementById('user-attr-fields');
 	if (!container) return;
@@ -611,11 +695,37 @@ function readAIChatFields(template: Template): void {
 		...(scrollToLoad ? { scrollToLoad: true } : {}),
 	};
 
+	// ExtractionConfig (new structural extraction — takes precedence when present)
+	const userMsgSel = (document.getElementById('chat-user-message-selector') as HTMLInputElement)?.value.trim();
+	const modelMsgRaw = (document.getElementById('chat-model-message-selectors') as HTMLTextAreaElement)?.value ?? '';
+	const modelMsgSelectors = modelMsgRaw.split('\n').map(s => s.trim()).filter(Boolean);
+	if (userMsgSel || modelMsgSelectors.length > 0) {
+		const rootSel = (document.getElementById('chat-root-selector') as HTMLInputElement)?.value.trim();
+		const extIgnore = (document.getElementById('chat-extraction-ignore-selector') as HTMLInputElement)?.value.trim();
+		const extModelSel = (document.getElementById('chat-extraction-model-selector') as HTMLInputElement)?.value.trim();
+		const extDedup = (document.getElementById('chat-extraction-deduplicate') as HTMLInputElement)?.checked;
+		const extractionConfig: ExtractionConfig = {
+			userMessageSelector: userMsgSel,
+			modelMessageSelectors: modelMsgSelectors,
+			...(rootSel ? { rootSelector: rootSel } : {}),
+			...(extIgnore ? { ignoreSelector: extIgnore } : {}),
+			...(extModelSel ? { modelSelector: extModelSel } : {}),
+			...(extDedup ? { deduplicate: true } : {}),
+		};
+		siteConfig.extractionConfig = extractionConfig;
+	} else {
+		siteConfig.extractionConfig = undefined;
+	}
+
+	const includeTitle = (document.getElementById('chat-include-title') as HTMLInputElement)?.checked ?? true;
+	const postProcessRules = readPostProcessRules();
 	const chatFormat: ChatFormat = {
 		userTitleFormat: (document.getElementById('chat-user-title') as HTMLInputElement)?.value ?? '',
 		aiTitleFormat: (document.getElementById('chat-ai-title') as HTMLInputElement)?.value ?? '',
 		turnSeparator: (document.getElementById('chat-turn-separator') as HTMLInputElement)?.value ?? '',
 		qaSeparator: (document.getElementById('chat-qa-separator') as HTMLInputElement)?.value ?? '',
+		includeTitle,
+		...(postProcessRules.length > 0 ? { postProcessRules } : {}),
 	};
 
 	template.siteConfig = siteConfig;
