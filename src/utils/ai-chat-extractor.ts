@@ -355,12 +355,22 @@ function applyPostProcessRules(markdown: string, rules: PostProcessRule[]): stri
  *
  * postProcessRules 적용 후 반환한다.
  */
+/** chatFormat 문자열에서 {{key}} 변수를 치환한다 (aiTitleFormat에서 {{siteEmoji}}/{{aiLabel}} 사용 가능). */
+function resolveFormat(format: string, vars: Record<string, string>): string {
+	return format.replace(/\{\{(\w+)\}\}/g, (match, key) => vars[`{{${key}}}`] ?? match);
+}
+
 export function formatQASession(
 	session: QASession,
 	chatFormat: ChatFormat,
-	pageTitle: string
+	pageTitle: string,
+	extraVars?: Record<string, string>
 ): string {
 	if (session.length === 0) return '';
+
+	const vars = extraVars ?? {};
+	const userTitle = resolveFormat(chatFormat.userTitleFormat, vars);
+	const aiTitle   = resolveFormat(chatFormat.aiTitleFormat, vars);
 
 	let body = '';
 	for (let i = 0; i < session.length; i++) {
@@ -371,7 +381,7 @@ export function formatQASession(
 
 		// 사용자 메시지
 		if (pair.user.markdown) {
-			body += `${chatFormat.userTitleFormat}\n\n${pair.user.markdown}\n\n`;
+			body += `${userTitle}\n\n${pair.user.markdown}\n\n`;
 		}
 
 		// 사용자→모델 구분자
@@ -382,7 +392,7 @@ export function formatQASession(
 		// 모델 응답 (복수 응답 지원)
 		pair.model.forEach((modelMsg, idx) => {
 			if (idx > 0 && chatFormat.turnSeparator) body += `${chatFormat.turnSeparator}\n\n`;
-			body += `${chatFormat.aiTitleFormat}\n\n${modelMsg.markdown}\n\n`;
+			body += `${aiTitle}\n\n${modelMsg.markdown}\n\n`;
 		});
 	}
 

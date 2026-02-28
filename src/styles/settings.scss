@@ -340,6 +340,28 @@ details.ai-chat-settings {
 	}
 }
 
+#general-post-process-rules-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 8px 0;
+
+	&:empty {
+		display: none;
+	}
+
+	> .post-process-rule-row {
+		display: grid;
+		grid-template-columns: 1fr 2fr 56px 2fr auto;
+		gap: 4px;
+		align-items: center;
+
+		input {
+			margin: 0;
+		}
+	}
+}
+
 #vault-list {
 	display: flex;
 	flex-direction: column;

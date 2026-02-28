@@ -244,3 +244,62 @@ model은 설정 화면에서 Edit template 상단 부분(Properties 윗부분)�
   - AI Chat 템플릿: template.model → DOM 추출 modelName → authorLabel → template 이름 순으로 {{model}}   
   결정
   - 일반 템플릿: template.model이 설정된 경우 {{model}}로 사용 가능 (예: Properties에서 model: {{model}})
+
+
+==========================
+
+"""
+템플릿에 있는 'AI Chat 설정'에서
+
+대화 형식(사용자 메시지 제목, AI 메시지 제목, 턴 구분자, Q&A 구분자, 제목 포함), 사후 보정 규칙 등은
+Settings > General로 이동해주세요.
+
+그리고 사후 보정 규칙에
+
+제목(H1, H2, ...)앞 줄바꿈, 제목(H1, H2, ...)뒤 줄바꿈 규칙을 추가해주세요.
+"""
+
+---
+제목앞 줄바꿈	\n#	\n\n#
+제목뒤 줄바꿈	^(#+)(.+)\n	$1$2\n\n
+---
+
+  ---                                                                                                                               완료된 작업 요약                                                                                                                
+                                                                                                                                    대화 형식 설정을 Template → General로 이동                                                                                                                                                                                                                        
+  변경 내용
+
+  ┌───────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────┐  
+  │                 파일                  │                                     변경 사항                                      │  
+  ├───────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤  
+  │ src/core/popup.ts                     │ sendExtractAIChat 2곳 + formatQASession 2곳 모두 generalSettings.chatFormat 사용   │  
+  ├───────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤  
+  │ src/settings.html                     │ General 섹션에 AI Chat 대화 형식 블록 추가 (general-chat-* ID), Template AI Chat   │  
+  │                                       │ 설정에서 대화 형식 섹션 제거                                                       │  
+  ├───────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤  
+  │ src/managers/general-settings.ts      │ initializeChatFormatSettings() 추가 — General UI 필드 초기화 + 변경 시 저장        │  
+  ├───────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤  
+  │ src/managers/template-ui.ts           │ renderPostProcessRules/addPostProcessRuleRow/readPostProcessRules export,          │  
+  │                                       │ 시그니처를 container 인자 방식으로 변경; chatFormat 관련 populate/read 코드 제거   │  
+  ├───────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤  
+  │ src/data/default-ai-chat-templates.ts │ 5개 기본 템플릿에서 chatFormat 필드 제거                                           │  
+  └───────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────┘  
+
+  동작 방식
+
+  - General Settings 페이지에서 사용자 메시지 제목, AI 메시지 제목, 턴/Q&A 구분자, 제목 포함, 사후 보정 규칙을 전역으로 설정      
+  - aiTitleFormat의 {{siteEmoji}}, {{aiLabel}}는 클리핑 시 각 템플릿의 emoji/authorLabel 값으로 치환됨
+  - 기본값은 storage-utils.ts의 DEFAULT_CHAT_FORMAT에 정의 (줄 끝 공백, 리스트 빈줄, 제목 앞·뒤 줄바꿈 규칙 포함)
+
+
+================
+
+"""
+General Settings 페이지에서 사후 보정 규칙을 규칙 1개당 1줄로 UI를 수정해주세요. 지금은 여러줄로 되어 있네요.
+"""
+
+● 빌드 성공. 변경 내용:                                                                                                                                                                                                                                             
+  settings.scss에 #general-post-process-rules-list > .post-process-rule-row 그리드 스타일 블록 추가:                                - 5열 그리드: 1fr 2fr 56px 2fr auto (설명 / 패턴 / 플래그 / 치환 / 삭제버튼)                                                    
+  - gap: 4px, align-items: center — 1줄 레이아웃                                                                                    - &:empty { display: none } — 규칙 없을 때 컨테이너 숨김                                                                                                                                                                                                            이제 General Settings에서 사후 보정 규칙 각 항목이 한 줄에 표시됩니다. 
+
+====================
+

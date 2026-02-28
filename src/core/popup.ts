@@ -253,20 +253,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 						// AI chat 템플릿이면 대화 추출
 						let extraVariables: Record<string, string> | undefined;
-						if (currentTemplate?.siteConfig && currentTemplate?.chatFormat) {
+						if (currentTemplate?.siteConfig?.hostname) {
 							const chatResult = await sendExtractAIChat(
 								tabs[0].id,
 								currentTemplate.siteConfig,
-								currentTemplate.chatFormat
+								generalSettings.chatFormat
 							);
 							if (chatResult) {
 								if (chatResult.messageCount === 0) {
 									console.warn('[AI Chat] 메시지를 찾을 수 없습니다. 대화 페이지인지 확인하세요. (URL:', currentUrl, ')');
 								}
+								const chatExtraVars = {
+									'{{siteEmoji}}': currentTemplate.emoji ?? '',
+									'{{aiLabel}}': currentTemplate.authorLabel ?? '',
+								};
 								const markdown = formatQASession(
 									chatResult.session,
-									currentTemplate.chatFormat,
-									chatResult.pageTitle
+									generalSettings.chatFormat,
+									chatResult.pageTitle,
+									chatExtraVars
 								);
 								extraVariables = buildAIChatVariables(
 									markdown,
@@ -367,20 +372,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 					if (extractedData) {
 						// AI chat 템플릿이면 대화 추출
 						let extraVariables: Record<string, string> | undefined;
-						if (currentTemplate.siteConfig && currentTemplate.chatFormat) {
+						if (currentTemplate.siteConfig?.hostname) {
 							const chatResult = await sendExtractAIChat(
 								tabs[0].id,
 								currentTemplate.siteConfig,
-								currentTemplate.chatFormat
+								generalSettings.chatFormat
 							);
 							if (chatResult) {
 								if (chatResult.messageCount === 0) {
 									console.warn('[AI Chat] 메시지를 찾을 수 없습니다. 대화 페이지인지 확인하세요.');
 								}
+								const chatExtraVars = {
+									'{{siteEmoji}}': currentTemplate.emoji ?? '',
+									'{{aiLabel}}': currentTemplate.authorLabel ?? '',
+								};
 								const markdown = formatQASession(
 									chatResult.session,
-									currentTemplate.chatFormat!,
-									chatResult.pageTitle
+									generalSettings.chatFormat,
+									chatResult.pageTitle,
+									chatExtraVars
 								);
 								extraVariables = buildAIChatVariables(
 									markdown,

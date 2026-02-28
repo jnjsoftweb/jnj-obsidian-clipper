@@ -50,6 +50,46 @@
 							<div id="keyboard-shortcuts-list"></div>
 						</div>
 						<div>
+							<h3>AI Chat 대화 형식</h3>
+							<div class="setting-item-description">AI 대화 클리핑 시 마크다운 생성에 사용되는 공통 설정입니다.</div>
+							<div class="setting-item">
+								<label for="general-chat-user-title">사용자 메시지 제목</label>
+								<input type="text" id="general-chat-user-title" placeholder="&gt; 👤 사용자 (User)" />
+							</div>
+							<div class="setting-item">
+								<label for="general-chat-ai-title">AI 메시지 제목</label>
+								<div class="setting-item-description"><code>{{siteEmoji}}</code>, <code>{{aiLabel}}</code> 변수를 사용할 수 있습니다.</div>
+								<input type="text" id="general-chat-ai-title" placeholder="&gt; {{siteEmoji}} {{aiLabel}}" />
+							</div>
+							<div class="setting-item">
+								<label for="general-chat-turn-separator">턴 구분자</label>
+								<div class="setting-item-description">사용자→AI 사이에 삽입되는 구분자</div>
+								<input type="text" id="general-chat-turn-separator" />
+							</div>
+							<div class="setting-item">
+								<label for="general-chat-qa-separator">Q&amp;A 구분자</label>
+								<div class="setting-item-description">새 Q&amp;A 세트 시작 시 삽입되는 구분자</div>
+								<input type="text" id="general-chat-qa-separator" />
+							</div>
+							<div class="setting-item mod-horizontal">
+								<div class="setting-item-info">
+									<label for="general-chat-include-title">제목 포함</label>
+									<div class="setting-item-description">마크다운 상단에 # 제목 H1을 포함합니다. {{title}} 변수는 이 H1에서 추출됩니다.</div>
+								</div>
+								<div class="setting-item-control">
+									<div class="checkbox-container">
+										<input type="checkbox" id="general-chat-include-title" />
+									</div>
+								</div>
+							</div>
+							<div class="setting-item">
+								<label>사후 보정 규칙</label>
+								<div class="setting-item-description">마크다운에 순차 적용할 정규식 치환 규칙</div>
+								<div id="general-post-process-rules-list"></div>
+								<div class="metadata-add-button"><a id="general-add-post-process-rule-btn">+ 규칙 추가</a></div>
+							</div>
+						</div>
+						<div>
 							<h3>Advanced</h3>
 							<div class="setting-item mod-horizontal">
 								<div class="setting-item-info">
@@ -279,42 +319,6 @@
 									</div>
 									<div id="user-attr-fields"></div>
 
-									<h4>대화 형식</h4>
-									<div class="setting-item">
-										<label for="chat-user-title">사용자 메시지 제목</label>
-										<input type="text" id="chat-user-title" placeholder="## 🧑 User" />
-									</div>
-									<div class="setting-item">
-										<label for="chat-ai-title">AI 메시지 제목</label>
-										<input type="text" id="chat-ai-title" placeholder="## 🤖 Assistant" />
-									</div>
-									<div class="setting-item">
-										<label for="chat-turn-separator">턴 구분자</label>
-										<div class="setting-item-description">사용자→AI 사이에 삽입되는 구분자</div>
-										<input type="text" id="chat-turn-separator" />
-									</div>
-									<div class="setting-item">
-										<label for="chat-qa-separator">Q&A 구분자</label>
-										<div class="setting-item-description">새 Q&A 세트 시작 시 삽입되는 구분자 (예: ---)</div>
-										<input type="text" id="chat-qa-separator" placeholder="---" />
-									</div>
-									<div class="setting-item mod-horizontal">
-										<div class="setting-item-info">
-											<label for="chat-include-title">제목 포함</label>
-											<div class="setting-item-description">마크다운 상단에 # 제목 H1을 포함합니다. {{title}} 변수는 이 H1에서 추출됩니다.</div>
-										</div>
-										<div class="setting-item-control">
-											<div class="checkbox-container">
-												<input type="checkbox" id="chat-include-title" />
-											</div>
-										</div>
-									</div>
-									<div class="setting-item">
-										<label>사후 보정 규칙</label>
-										<div class="setting-item-description">마크다운에 순차 적용할 정규식 치환 규칙</div>
-										<div id="post-process-rules-list"></div>
-										<div class="metadata-add-button"><a id="add-post-process-rule-btn">+ 규칙 추가</a></div>
-									</div>
 								</div>
 							</details>
 						</div>
