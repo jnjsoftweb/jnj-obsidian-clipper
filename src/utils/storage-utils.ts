@@ -7,7 +7,7 @@ const DEFAULT_CHAT_FORMAT: ChatFormat = {
 	qaSeparator: '============',
 	includeTitle: true,
 	postProcessRules: [
-		{ label: '줄 끝 공백 제거', pattern: '\\s+$', flags: 'gm', replacement: '' },
+		{ label: '줄 끝 공백 제거', pattern: '[ \\t]+$', flags: 'gm', replacement: '' },
 		{ label: '리스트 아이템 사이 빈 줄 제거', pattern: '(- [^\\n]+)\\n{2,}(?=-)', flags: 'gm', replacement: '$1\n' },
 		{ label: '제목 앞 줄바꿈', pattern: '([^\\n])\\n(#{1,6} )', flags: 'gm', replacement: '$1\n\n$2' },
 		{ label: '제목 뒤 줄바꿈', pattern: '(#{1,6} [^\\n]+)\\n([^\\n#])', flags: 'gm', replacement: '$1\n\n$2' }
@@ -44,6 +44,21 @@ export function getLocalStorage(key: string): Promise<any> {
 	});
 }
 
+// 실제 newline 문자가 저장된 경우 literal \n 표기로 변환
+function migrateSeparator(value: string): string {
+	return value.replace(/\n/g, '\\n');
+}
+
+// postProcessRule의 \s+$ 패턴을 [ \t]+$ 로 마이그레이션 (줄바꿈 문자를 삭제하지 않도록)
+function migratePostProcessRules(rules: any[]): any[] {
+	return rules.map(rule => {
+		if (rule.pattern === '\\s+$' && rule.flags === 'gm' && rule.replacement === '') {
+			return { ...rule, pattern: '[ \\t]+$' };
+		}
+		return rule;
+	});
+}
+
 export async function loadGeneralSettings(): Promise<GeneralSettings> {
 	const data = await chrome.storage.sync.get(['general_settings', 'vaults']);
 	const saved = data.general_settings ?? {};
@@ -56,10 +71,10 @@ export async function loadGeneralSettings(): Promise<GeneralSettings> {
 		chatFormat: {
 			userTitleFormat: savedCf.userTitleFormat ?? DEFAULT_CHAT_FORMAT.userTitleFormat,
 			aiTitleFormat:   savedCf.aiTitleFormat   ?? DEFAULT_CHAT_FORMAT.aiTitleFormat,
-			turnSeparator:   savedCf.turnSeparator   ?? DEFAULT_CHAT_FORMAT.turnSeparator,
-			qaSeparator:     savedCf.qaSeparator     ?? DEFAULT_CHAT_FORMAT.qaSeparator,
+			turnSeparator:   migrateSeparator(savedCf.turnSeparator   ?? DEFAULT_CHAT_FORMAT.turnSeparator),
+			qaSeparator:     migrateSeparator(savedCf.qaSeparator     ?? DEFAULT_CHAT_FORMAT.qaSeparator),
 			includeTitle:    savedCf.includeTitle    ?? DEFAULT_CHAT_FORMAT.includeTitle,
-			postProcessRules: savedCf.postProcessRules ?? DEFAULT_CHAT_FORMAT.postProcessRules
+			postProcessRules: migratePostProcessRules(savedCf.postProcessRules ?? DEFAULT_CHAT_FORMAT.postProcessRules)
 		}
 	};
 

@@ -371,13 +371,15 @@ export function formatQASession(
 	const vars = extraVars ?? {};
 	const userTitle = resolveFormat(chatFormat.userTitleFormat, vars);
 	const aiTitle   = resolveFormat(chatFormat.aiTitleFormat, vars);
+	const turnSep = chatFormat.turnSeparator.replace(/\\n/g, '\n');
+	const qaSep   = chatFormat.qaSeparator.replace(/\\n/g, '\n');
 
 	let body = '';
 	for (let i = 0; i < session.length; i++) {
 		const pair = session[i];
 
 		// Q&A 쌍 구분자 (첫 번째 쌍 앞에는 넣지 않음)
-		if (i > 0 && chatFormat.qaSeparator) body += `${chatFormat.qaSeparator}\n\n`;
+		if (i > 0 && qaSep) body += `${qaSep}\n\n`;
 
 		// 사용자 메시지
 		if (pair.user.markdown) {
@@ -385,13 +387,13 @@ export function formatQASession(
 		}
 
 		// 사용자→모델 구분자
-		if (pair.model.length > 0 && chatFormat.turnSeparator) {
-			body += `${chatFormat.turnSeparator}\n\n`;
+		if (pair.model.length > 0 && turnSep) {
+			body += `${turnSep}\n\n`;
 		}
 
 		// 모델 응답 (복수 응답 지원)
 		pair.model.forEach((modelMsg, idx) => {
-			if (idx > 0 && chatFormat.turnSeparator) body += `${chatFormat.turnSeparator}\n\n`;
+			if (idx > 0 && turnSep) body += `${turnSep}\n\n`;
 			body += `${aiTitle}\n\n${modelMsg.markdown}\n\n`;
 		});
 	}
@@ -400,9 +402,9 @@ export function formatQASession(
 	const includeTitle = chatFormat.includeTitle !== false;
 	let md = '';
 	if (includeTitle && pageTitle) md += `# ${pageTitle}\n\n`;
-	if (chatFormat.qaSeparator) md += `${chatFormat.qaSeparator}\n\n`;
+	if (qaSep) md += `${qaSep}\n\n`;
 	md += body;
-	if (chatFormat.qaSeparator) md += `${chatFormat.qaSeparator}\n\n`;
+	if (qaSep) md += `${qaSep}\n\n`;
 
 	// 사후 보정
 	if (chatFormat.postProcessRules?.length) {

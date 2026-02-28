@@ -73,8 +73,8 @@ function initializeChatFormatSettings(): void {
 
 	if (userTitleInput) userTitleInput.value = cf.userTitleFormat;
 	if (aiTitleInput) aiTitleInput.value = cf.aiTitleFormat;
-	if (turnSepInput) turnSepInput.value = cf.turnSeparator;
-	if (qaSepInput) qaSepInput.value = cf.qaSeparator;
+	if (turnSepInput) turnSepInput.value = cf.turnSeparator.replace(/\n/g, '\\n');
+	if (qaSepInput) qaSepInput.value = cf.qaSeparator.replace(/\n/g, '\\n');
 	if (includeTitleCb) includeTitleCb.checked = cf.includeTitle ?? true;
 
 	renderPostProcessRules(container, cf.postProcessRules);
